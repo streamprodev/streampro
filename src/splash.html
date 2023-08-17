@@ -1,0 +1,964 @@
+<html>
+
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h3>Application Is Starting...</h3>
+<div className="loader"></div>
+</html>
+
+
+  const [showSplash, setShowSplash] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteModalOpen, setisDeleteModalOpen] = useState(false);
+  const [isEditModalOpen, setisEditModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isConnectNowModalOpen, setIsConnectNowModalOpen] = useState(false);
+  const [isGenerateURLModalOpen, setisGenerateURLModalOpen] = useState(false);
+  const [songData, setsongData] = useState([]);
+  const [displayData, setdisplayData] = useState([]);
+  const [bookmarkedData, setbookmarkedData] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeSong, setactiveSong] = useState([]);
+  const [activeSongArray, setactiveSongArray] = useState([]);
+  const [activeId, setactiveId] = useState('');
+  const [activeLine, setactiveLine] = useState(-1);
+  const [lastContext, setlastContext] = useState('songs');
+  const [deleteSong, setdeleteSong] = useState('songs');
+  const [outputLine, setoutputLine] = useState('');
+  const [finaloutputLine, setfinaloutputLine] = useState('');
+  const [title, setTitle] = useState('');
+  const [body, setBody] = useState('');
+  const [outputUrl, setoutputUrl] = useState('http://127.0.0.1:8088');
+  const [outputPasscode, setoutputPasscode] = useState('');
+  const [outputConnectionSoftware, setoutputConnectionSoftware] = useState('');
+  const [outputConnectionEstablished, setoutputConnectionEstablished] = useState(0);
+  const [externalConnectionUrl, setexternalConnectionUrl] = useState('');
+  const [externalConnectionPasscode, setexternalConnectionPasscode] = useState('');
+  const [externalConnectionConnectionHours, setexternalConnectionConnectionHours] = useState(0);
+  const [externalConnectionConnectionMinutes, setexternalConnectionConnectionMinutes] = useState(0);
+  const [externalConnectionConnectionSeconds, setexternalConnectionConnectionSeconds] = useState(0);
+  const [externalConnectionConnectionEstablished, setexternalConnectionConnectionEstablished] = useState(0);
+  const [isLive, setisLive] = useState(false);
+  const [showoutputOptions, setshowoutputOptions] = useState(false);
+  const [outputOptionsPosition, setoutputOptionsPosition] = useState({ x: 0, y: 0 });
+
+  const [ngrokStatus, setngrokStatus] = useState({});
+  const [ngrokUrlError, setngrokUrlError] = useState();
+  const [menuEditId, setmenuEditId] = useState();
+
+  let [importing, setimporting] = useState(false);
+  let [color, setColor] = useState("#ffffff");
+
+  const handleShowOutputOption = (e) => {
+    e.preventDefault();
+    // setActiveItem(itemId);
+    if (showoutputOptions) {
+      setshowoutputOptions(false);
+      return
+
+    }
+
+    // const newContextMenuKey = contextMenuKey + 1;
+    // setContextMenuKey(newContextMenuKey);
+
+    const clickX = e.clientX;
+    const clickY = e.clientY;
+    const screenW = window.innerWidth;
+    const screenH = window.innerHeight;
+    const menuW = 200;
+    const menuH = 190;
+
+    const posX = clickX + menuW > screenW ? screenW - menuW : clickX;
+    const posY = clickY + menuH > screenH ? screenH - menuH : clickY;
+
+    setoutputOptionsPosition({ x: posX, y: posY });
+    setshowoutputOptions(true);
+
+  };
+
+  useEffect(() => {
+    if (outputOptionsRef.current) {
+      setTimeout(() => {
+        document.addEventListener('click', handleOutsideClick);
+
+      }, 1000);
+    }
+    // if (showoutputOptions ) {
+    //   console.log('outside')
+    // }
+
+    return () => {
+      if (outputOptionsRef.current) {
+        document.removeEventListener('click', handleOutsideClick);
+      }
+      // if (showoutputOptions ) {
+      //   document.removeEventListener('click', handleOutsideClick);
+      // }
+    }
+  }, [showoutputOptions])
+
+
+  const handleOutsideClick = (e) => {
+    if (outputOptionsRef.current && !outputOptionsRef.current.contains(e.target)) {
+      setshowoutputOptions(false);
+    }
+    document.removeEventListener('click', handleOutsideClick);
+  };
+
+
+  const songListRef = useRef(null);
+  const songDisplayRef = useRef(null);
+  const outputOptionsRef = useRef(null);
+
+  const override = {
+    display: "block",
+    margin: "0 auto",
+    borderColor: "red",
+  };
+
+
+  const {
+    seconds,
+    minutes,
+    hours,
+    days,
+    isRunning,
+    start,
+    pause,
+    reset,
+  } = useStopwatch({ autoStart: false });
+
+  let miniSearch = useMemo(
+    () =>
+      new MiniSearch({
+        fields: ['title', 'body'],
+        storeFields: ['title', 'id', 'body'],
+      }),
+    []
+  );
+
+  useEffect(() => {
+    if (songData.length) {
+      if (searchTerm) {
+        miniSearch.removeAll()
+      } else {
+        setdisplayData(songData.slice(0, 20))
+      }
+    }
+  }, [songData]);
+  useEffect(() => {
+    if (activeSongArray.length > 0) {
+
+      if (activeSongArray.length > 0 && activeLine >= activeSongArray.length) {
+        setactiveLine(prev => prev - 1)
+      } if (activeLine < -1) {
+        setactiveLine(prev => prev + 1)
+      } else {
+
+        if (activeLine !== -1 && activeSongArray) {
+          setoutputLine(activeSongArray[activeLine])
+        } else {
+          setoutputLine('')
+        }
+      }
+    }
+  }, [activeLine]);
+
+  useEffect(() => {
+    setactiveSong(songData.find(song => song.id === activeId))
+    setlastContext('songs')
+  }, [activeId]);
+  useEffect(() => {
+  }, [bookmarkedData]);
+
+  useEffect(() => {
+    if (activeSong?.body) {
+      setactiveSongArray(activeSong?.body?.split(/\r?\n/))
+    } else {
+      setactiveSongArray([])
+    }
+  }, [activeSong]);
+
+  useEffect(() => {
+    document.addEventListener('keydown', detectKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', detectKeyDown)
+    }
+  }, [activeSong, activeSongArray])
+
+  // useEffect(() => {
+  //   // document.addEventListener('keydown', detectKeyDown)
+  //   setTimeout(() => {
+  //     setShowSplash(false)
+  //   }, 2500)
+  //   // setactiveSongArray([])
+  //   ipcRenderer.invoke('getSongData').then(setsongData)
+  //   ipcRenderer.on('vmixDisconected', vmixDisconected)
+  //   ipcRenderer.on('data-loaded', dataLoader)
+  //   ipcRenderer.on('resetSongData', resetSongData);
+  //   ipcRenderer.on('txt-files-listed', handleFolderContents);
+  //   ipcRenderer.on('setngrokUrlError', setngrokUrlErrorf);
+  //   ipcRenderer.on('setngrokUrl', setngrokUrlf);
+  //   ipcRenderer.on('setngrokStatus', setngrokStatusf);
+  //   ipcRenderer.on('closeNgrokSession', closeNgrokSessionf);
+  //   ipcRenderer.on('bulkInsertComplete', bulkInsertCompletef);
+  //   ipcRenderer.on('deleteSong', removedeletedSong);
+  //   // window.addEventListener('click', handleOutsideClick);
+
+  //   return () => {
+  //     ipcRenderer.removeListener('setngrokUrlError', setngrokUrlErrorf);
+  //     ipcRenderer.removeListener('setngrokUrl', setngrokUrlf);
+  //     ipcRenderer.removeListener('setngrokStatus', setngrokStatusf);
+  //     ipcRenderer.removeListener('resetSongData', resetSongData);
+  //     ipcRenderer.removeListener('txt-files-listed', handleFolderContents);
+  //     ipcRenderer.removeListener('deleteSong', removedeletedSong);
+  //     // window.removeEventListener('click', handleOutsideClick);
+  //   }
+  // }, []);
+  const detectKeyDown = (e) => {
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      // setactiveLine(prev => prev - 1)
+      if (activeSongArray && activeSongArray.length > 0) {
+        setactiveLine(prev => {
+          var nextPos = -1
+          var done = false
+          while (!done) {
+            if (activeSongArray[prev + nextPos] && (activeSongArray[prev + nextPos]).length > 0 && activeSongArray[prev + nextPos] != "  ") {
+              done = true
+            } else if ((prev + nextPos) < -1) {
+              nextPos = 0;
+              done = true
+            } else {
+              nextPos = nextPos - 1
+            }
+          }
+          return prev + nextPos
+        })
+      }
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      if (activeSongArray && activeSongArray.length > 0) {
+        setactiveLine(prev => {
+          var nextPos = 1
+          var done = false
+          while (!done) {
+            if (activeSongArray[prev + nextPos] && (activeSongArray[prev + nextPos]).length > 0 && activeSongArray[prev + nextPos] != "  ") {
+              done = true
+            } else if ((prev + nextPos) > activeSongArray.length) {
+              nextPos = 0;
+              done = true
+            } else {
+
+              nextPos++
+            }
+          }
+          return prev + nextPos
+        })
+      }
+    } else
+      if (e.key === "Escape" || e.key == 'Shift') {
+        e.preventDefault();
+        setactiveLine(-1)
+      }
+  }
+
+
+  useEffect(() => {
+    if (ngrokUrlError) {
+      setngrokStatus('error')
+      setexternalConnectionConnectionEstablished(0)
+      setexternalConnectionUrl('')
+      setexternalConnectionPasscode('')
+      reset()
+    }
+  }, [ngrokUrlError]);
+
+  useEffect(() => {
+
+    if (isLive) {
+      setfinaloutputLine(outputLine)
+    } else if (outputConnectionEstablished) {
+      const data = { outputUrl, outputPasscode, outputLine }
+      ipcRenderer.invoke('sendToVmix', data).then(res => console.log(res)).catch(err => console.log(err))
+
+    }
+  }, [outputLine]);
+  useEffect(() => {
+    // if (finaloutputLine) {
+    // }
+    const data = { outputUrl, outputPasscode, finaloutputLine }
+    ipcRenderer.invoke('goLiveWSongs', data).then(res => console.log(res)).catch(err => console.log(err))
+  }, [finaloutputLine]);
+
+  useEffect(() => {
+    if (isLive) {
+      if (!outputConnectionEstablished) {
+        setisLive(false)
+        toast(<LowerToast status={'error'} message={'You need to connect to streaming software before you go live'} />, {
+          position: "bottom-center",
+          autoClose: 2000,
+          hideProgressBar: true,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+          style: { width: "500px", backgroundColor: "#FF3939", textAlign: "left", height: "10px", margin: "auto", color: "#ffffff" }
+        });
+      } else {
+        setfinaloutputLine(outputLine)
+      }
+
+    } else {
+      const data = { outputUrl, outputPasscode, finaloutputLine }
+      ipcRenderer.invoke('goOfflineWSongs', data).then(res => console.log(res)).catch(err => console.log(err))
+      setfinaloutputLine('')
+    }
+  }, [isLive]);
+
+
+
+  const bulkInsertCompletef = (event, contents) => {
+    setimporting(false)
+    closeImportModal()
+  };
+  const setngrokUrlf = (event, contents) => {
+    setexternalConnectionConnectionEstablished(1)
+    setexternalConnectionUrl(contents.url)
+    setexternalConnectionPasscode(contents.password)
+    start()
+    setngrokUrlError('')
+
+    const testdata = 'hello world'
+    const ref = collection(firestore, "Remote Connections") // Firebase creates this automatically
+
+    let data = {
+      url: contents.url,
+      password: contents.password
+    }
+
+    try {
+      addDoc(ref, data)
+    } catch (err) {
+      console.log(err)
+    }
+  };
+  const setngrokUrlErrorf = (event, contents) => {
+    setngrokUrlError(contents)
+    console.log(contents)
+    closeConnectNowModal()
+    // setoutputConnectionEstablished(-1)
+    toast(<LowerToast status={'error'} message={contents} />, {
+      position: "bottom-center",
+      autoClose: 300,
+      hideProgressBar: true,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+      theme: "light",
+      style: { width: "60vw", backgroundColor: "#FF3939", textAlign: "left", height: "10px", margin: "auto" }
+    });
+  };
+  const closeNgrokSessionf = (event, contents) => {
+    setngrokUrlError(contents)
+    // console.log(contents)
+  };
+  const setngrokStatusf = (event, contents) => {
+    setngrokStatus(contents);
+    toast(<LowerToast status={'error'} message={contents} />, {
+      position: "bottom-center",
+      autoClose: 300,
+      hideProgressBar: true,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+      theme: "light",
+      style: { width: "20vw", backgroundColor: "#A7FFB5", textAlign: "left", height: "10px", margin: "auto" }
+    });
+    console.log(contents)
+  };
+  const resetSongData = (event, data) => {
+
+    if (data === "delete") {
+      toast(<LowerToast status={'success'} message={'Song Deleted Successfully'} />, {
+        position: "bottom-center",
+        autoClose: 5000,
+        hideProgressBar: true,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+        style: { width: "60vw", height: "20px", backgroundColor: "#A7FFB5", textAlign: "left" }
+      });
+
+    } else if (data === 'edit') {
+
+      setmenuEditId('')
+      // toast.success("Song edited successfully");
+      toast(<LowerToast status={'success'} message={'Song edited Successfully'} />, {
+        position: "bottom-center",
+        autoClose: 5000,
+        hideProgressBar: true,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+        style: { width: "60vw", height: "20px", backgroundColor: "#A7FFB5", textAlign: "left" }
+      });
+
+    } else
+      if (data === "add") {
+        toast(<LowerToast status={'success'} message={'Song Added Successfully'} />, {
+          position: "bottom-center",
+          autoClose: 5000,
+          hideProgressBar: true,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+          style: { width: "60vw", height: "20px", backgroundColor: "#A7FFB5", textAlign: "left" }
+        });
+        ipcRenderer.invoke('refreshSongData').then(setsongData)
+      }
+
+
+  }
+
+
+  const copiedToaster = () => {
+    return toast(<LowerToast status={'success'} message={'copied'} />, {
+      position: "bottom-center",
+      autoClose: 300,
+      hideProgressBar: true,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+      theme: "light",
+      style: { width: "20vw", backgroundColor: "#A7FFB5", textAlign: "left", height: "10px", margin: "auto" }
+    });
+  }
+  const vmixDisconected = () => {
+    setoutputConnectionEstablished(0)
+    setisLive(false)
+  }
+
+
+  useEffect(() => {
+    if (songData && songData.length) {
+      // setdisplayData(songData.slice(0, 20))
+      // setbookmarkedData(songData.filter((song) => {
+      //   return song.bookmarked == 1;
+      // }))
+
+      if (activeId) {
+        setactiveSong(songData.find(song => song.id === activeId))
+      }
+
+      miniSearch.removeAll()
+      miniSearch.addAll(songData)
+    }
+
+  }, [songData]);
+
+  const handleFolderContents = async (event, contents) => {
+    const results = [];
+    let fileContents;
+    if (contents) {
+
+      const totalcontents = contents.length
+
+      await Promise.all(contents.map(async (element) => {
+        fileContents = await readFileContents(element, totalcontents);
+        results.push({ title: fileContents.fileName, body: fileContents.data });
+      }));
+
+      ipcRenderer.send('bulkInsert', results);
+    }
+  };
+
+  const readFileContents = async (filePath, index) => {
+
+    try {
+      const response = await ipcRenderer.invoke('readFile', filePath);
+      return response;
+    } catch (error) {
+      console.error('Error invoking readFile:', error);
+    }
+
+  };
+
+  useEffect(() => {
+    if (songListRef.current) {
+      songListRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [displayData]);
+  useEffect(() => {
+    if (songDisplayRef.current) {
+      songDisplayRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [activeSong]);
+
+
+  const handleKeyPress = (event, otherKey) => {
+    songListRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+
+    if (otherKey) {
+      setdisplayData(() => { return (miniSearch.search(otherKey)).slice(0, 20) })
+    }
+
+    if (!searchTerm) {
+      if (songData.length) {
+        setdisplayData(songData.slice(0, 20))
+      }
+      return
+    }
+    if (miniSearch.documentCount === 0) {
+      miniSearch.addAll(songData)
+    }
+    setdisplayData(() => { return (miniSearch.search(searchTerm)).slice(0, 20) })
+
+    // console.log('end', new Date().toJSON())
+  };
+
+
+  const dataLoader = async (event, data) => {
+    setIsModalOpen(false);
+  };
+  const closeModal = (edit) => {
+    if (edit) {
+      setBody('')
+      setTitle('')
+      setisEditModalOpen(false)
+    } else {
+      setIsModalOpen(false);
+    }
+  };
+  const closeDeleteModal = () => {
+    setisDeleteModalOpen(false);
+  };
+  const openModal = (edit) => {
+    if (edit) {
+      setisEditModalOpen(true)
+    } else {
+      setIsModalOpen(true);
+    }
+  };
+  const openImportModal = () => {
+    setIsImportModalOpen(true);
+  };
+  const openConnectNowModal = () => {
+    setIsConnectNowModalOpen(true);
+  };
+  const openGenerateURLModal = () => {
+    setisGenerateURLModalOpen(true);
+  };
+
+  const destroyCreatedUrl = () => {
+    reset()
+    setexternalConnectionPasscode('')
+    setexternalConnectionUrl('')
+    // pause()
+    ipcRenderer.send('closengrok', 'Session closed successfully')
+    setexternalConnectionConnectionEstablished(0)
+  };
+
+  const closeConnectNowModal = () => {
+    setIsConnectNowModalOpen(false);
+  };
+  const closeGenerateURLModal = () => {
+    setisGenerateURLModalOpen(false);
+  };
+  const closeImportModal = () => {
+    setIsImportModalOpen(false);
+  };
+
+  const handleFormSubmit = (formData) => {
+    ipcRenderer.send('singleInsert', formData)
+    // ipcRenderer.invoke('singleInsert', formData).then((res) => console.log(res))
+
+    closeModal();
+  };
+
+
+  const handleFormSubmitEdit = (formData) => {
+    formData.id = activeId
+    if (menuEditId) {
+      formData.id = menuEditId
+    }
+    //edit songdata
+    const sonDataIndex = songData.findIndex(x => x.id === formData.id);
+    songData[sonDataIndex] = formData;
+    setsongData(songData)
+
+    //edit bookmarkdata
+    ipcRenderer.send('singleEdit', formData)
+    const bookmarkdataIndex = bookmarkedData.findIndex(x => x.id === formData.id);
+    if (bookmarkdataIndex >= 0) {
+      bookmarkedData[bookmarkdataIndex] = formData;
+      setbookmarkedData(bookmarkedData)
+    }
+
+    //edit active song
+    if (activeId === formData.id) {
+      setactiveSong(formData)
+    }
+    closeModal(1);
+  };
+
+  const capitalize = (s) => {
+    if (typeof s !== 'string') return ''
+    return s.charAt(0).toUpperCase() + s.slice(1)
+  }
+  const expiryTimestamp = new Date();
+  expiryTimestamp.setSeconds(expiryTimestamp.getSeconds() + 600);
+
+  const [bookmarkopen, setbookmarkOPen] = useState(false);
+
+  const deleteBookmark = (song) => {
+    setbookmarkedData(prev => {
+      return prev.filter(object => {
+        return object.id !== song.id;
+      })
+    })
+  }
+  const removedeletedSong = (event, song) => {
+
+
+    // Remove the item from the display list
+
+    setsongData(prev => {
+      return prev.filter(object => {
+        return object.id !== song.id;
+      })
+    })
+    setdisplayData(prev => {
+      return prev.filter(object => {
+        return object.id !== song.id;
+      })
+    })
+  }
+  const addBookmark = (object) => {
+    setbookmarkedData((prev) => {
+      return prev.concat(object);
+    })
+  }
+  
+ <>
+     <AppNav />
+     <div className='App-header2' style={{ paddingTop: "20px" }}>
+         <SideBar />
+         <div className='main-section'>
+             <div className='NavBar'>
+                 <div className=''
+                     style={{ width: "333px", display: "flex", position: "relative" }}>
+                     <input type="text" placeholder="Search" className="search-input-nav" />
+                     <SearchNormal
+                         style={{ position: "absolute", top: "20%", right: "4%" }}
+                         size={20} />
+                 </div>
+                 <div
+                     style={{ display: "flex", alignItems: 'center', gap: "105px" }}>
+                     <p style={{ fontWeight: "600", fontSize: "12px", background: "#15181C", textAlign: "center", cursor: "pointer" }}
+                         className='ImportSong' onClick={openImportModal}>Import Songs</p>
+                     <div
+                         style={{ display: "flex", alignItems: 'center', gap: 21, marginRight: "15px" }}>
+                         <ProfileCircle size="24" />
+                         <Setting2 size="24" />
+                     </div>
+                 </div>
+
+             </div>
+             <div className='MainBody'>
+                 <div className='bookmarkXsong'>
+                     <div className={bookmarkopen ? 'bookmarks bookmark-show' : 'bookmarks bookmark-hide' }>
+                         <div className=''
+                             style={{ width: "90%", alignItems: "center", textAlign: "left", fontSize: "14px", paddingLeft: "24px", display: "flex", flexDirection: "row", paddingTop: "5px", justifyContent: "space-between" }}>
+                             <p
+                                 style={{ fontWeight: "600", color: "#FFFFFF", fontSize: "14px", }}>
+                                 Bookmarks</p>
+                             {
+                             bookmarkopen ?
+                             <ArrowUp2 size="20" color="#d9e3f0" onClick={()=> setbookmarkOPen(false)}
+                                 style={{ cursor: 'pointer', paddingRight: "13px" }}
+                                 />
+                                 :
+                                 <ArrowDown2 size="20" color="#d9e3f0" onClick={()=> setbookmarkOPen(true)}
+                                     style={{ cursor: 'pointer', paddingRight: "13px" }}
+                                     />
+                                     }
+                         </div>
+                         <div ref={songListRef} className=''
+                             style={{ overflow: "scroll", height: "100%", paddingLeft: "24px", width: "90%", }}>
+                             {
+                             bookmarkedData.length > 0 &&
+                             bookmarkedData.map((item) => (
+                             <SongListItem key={item.id} song={item} activeId={activeId} setactiveId={setactiveId}
+                                 setactiveLine={setactiveLine} setTitle={setTitle} setBody={setBody}
+                                 activeSongArray={activeSongArray} openModal={openModal} menuEditId={menuEditId}
+                                 setmenuEditId={setmenuEditId} type={'bookmark'} deleteBookmark={deleteBookmark}
+                                 addBookmark={addBookmark} />
+                             ))
+                             }
+                         </div>
+                     </div>
+
+
+
+
+                     <div className='songsList'
+                         style={{ borderRadius: "10px", flex: "1", paddingLeft: "24px", overflow: "scroll", }}>
+
+                         <div
+                             style={{ position: "sticky", top: 0, background: "#15181C", alignItems: "flex-start", textAlign: "left", fontSize: "14px", borderTopRightRadius: "4px", borderTopLeftRadius: "4px", }}>
+                             <p
+                                 style={{ fontWeight: "600", color: "#FFFFFF", fontSize: "14px", paddingTop: "18px", background: "#15181C" }}>
+                                 Songs</p>
+                         </div>
+                         <div
+                             style={{ position: "sticky", top: 0, background: "#15181C", alignItems: "center", fontSize: "14px", display: "flex", flexDirection: "row", justifyContent: "space-between", paddingRight: "24px", }}>
+                             <div className='' style={{}}>
+                                 <input type="text" placeholder="Search songs" className="search-input"
+                                     onKeyUp={handleKeyPress} onChange={(event)=> setSearchTerm(event.target.value)}
+                                 value={searchTerm} />
+                                 <SearchNormal className="search-icon" size={20} />
+                             </div>
+                             <p className="AddNew"
+                                 style={{ fontWeight: "600", fontSize: "14px", background: "#15181C", textAlign: "center", cursor: 'pointer', color: "#FF3939" }}
+                                 onClick={()=> openModal()}>Add New</p>
+
+                         </div>
+
+                         <div className=''
+                             style={{ overflow: "scroll", height: "100%" }}>
+
+                             {
+                             displayData &&
+                             displayData.map((item) => (
+                             <SongListItem key={item.id} song={item} activeId={activeId} setactiveId={setactiveId}
+                                 setactiveLine={setactiveLine} setTitle={setTitle} setBody={setBody}
+                                 activeSongArray={activeSongArray} openModal={openModal} menuEditId={menuEditId}
+                                 setmenuEditId={setmenuEditId} setisDeleteModalOpen={setisDeleteModalOpen}
+                                 deleteSong={deleteSong} setdeleteSong={setdeleteSong} deleteBookmark={deleteBookmark}
+                                 addBookmark={addBookmark} setbookmarkOPen={setbookmarkOPen} />
+                             ))
+                             }
+
+                         </div>
+                     </div>
+                 </div>
+                 <div className='song'>
+                     <div
+                         style={{ display: "flex", justifyContent: "flex-end", marginTop: "36px", gap: "10px", marginRight: "30px" }}>
+                         <div style={{ display: "flex", gap: "10px", alignItems: "center", cursor: activeSongArray.length < 1 ? "not-allowed" : "pointer" }}
+                             onClick={()=> {
+                             if (activeSongArray.length > 0) {
+                             setTitle(activeSong.title)
+                             setBody(activeSong.body)
+                             openModal(1)
+                             }
+                             }} >
+
+                             <span
+                                 style={{ fontSize: '11px', fontWeight: "500" }}>Edit
+                                 Song</span>
+                             <Edit2 size={11} />
+                         </div>
+                     </div>
+                     <span
+                         style={{ fontSize: '14px', fontWeight: "600", color: "#FFFFFF", marginTop: "30px", textAlign: "left", marginLeft: "90px" }}>{activeSong
+                         && activeSong.title} </span>
+
+                     <div className='song-body'
+                         style={{ height: "90%", width: "100%", overflow: "scroll", }}>
+                         <div ref={songDisplayRef} className='bookmarks'
+                             style={{ overflow: "scroll", height: "100%", width: "100%", marginBottom: "10px" }}>
+                             {activeSongArray &&
+                             activeSongArray.map((item, index) => (
+                             <LyricsLine key={index} line={item} index={index} activeLine={activeLine}
+                                 setactiveLine={setactiveLine} />
+                             ))
+                             }
+                         </div>
+                     </div>
+                 </div>
+                 <div className='connectionsXnotes'>
+                     <div className='preview'>
+                         <div
+                             style={{ display: "flex", marginLeft: "24px", marginRight: "24px", justifyContent: "space-between", alignItems: "center", maxHeight: "10%", marginTop: "20px" }}>
+                             <span
+                                 style={{ fontSize: '14px', fontWeight: "600", color: "#FFFFFF", textAlign: "left", }}>Preview</span>
+                             {/*
+                             <GoLiveSwitch isLive={isLive} setisLive={setisLive} /> */}
+                         </div>
+                         <div
+                             style={{ paddingLeft: "24px", paddingRight: "24px", textAlign: "left", flex: 1, alignItems: 'center', display: "flex" }}>
+                             <span
+                                 style={{ fontSize: '14px', fontWeight: "600", color: "#B1B1B1", lineHeight: "1" }}>{outputLine}
+                             </span>
+                         </div>
+                         <div style={{ flex: 1 }}></div>
+                     </div>
+                     <div className='finaloutput'>
+
+                         <div
+                             style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginLeft: "24px", gap: "5px", minHeight: "30%", marginRight: "24px" }}>
+                             <div
+                                 style={{ display: "flex", justifyContent: "flex-start", alignItems: "flex-start", gap: "5px" }}>
+                                 <span
+                                     style={{ fontSize: '14px', fontWeight: "600", color: "#FFFFFF" }}>{!outputConnectionEstablished
+                                     ? "Output(Not Connected)" : "Output (" + capitalize(outputConnectionSoftware) +
+                                     ")"} </span>
+                                 <div
+                                     style={{ height: "11px", width: "11px", borderRadius: "50%", backgroundColor: !outputConnectionEstablished ? "#FF3939" : "#3EDB57", marginTop: "5px" }}>
+                                 </div>
+                             </div>
+                             {
+                             outputConnectionEstablished == 1 &&
+                             <button
+                                 style={{ width: "82px", height: "30px", backgroundColor: "#15181C", border: "1px solid #FF3939", borderRadius: "4px", cursor: "pointer", borderColor: isLive ? "#3EDB57" : "#FF3939" }}
+                                 onClick={()=> setisLive(prev => !prev)}>
+                                 <span
+                                     style={{ color: isLive ? "#3EDB57" : "#FF3939" }}>{!isLive
+                                     ? "Go Live" : "Live"}</span>
+                             </button>
+                             }
+                             {
+                             outputConnectionEstablished == 1 &&
+                             <div style={{ cursor: "pointer", width: "10px" }}
+                                 onClick={handleShowOutputOption}>
+                                 <SlOptionsVertical size={15} color='#B1B1B1' />
+
+                                 {showoutputOptions && (
+                                 <div ref={outputOptionsRef}>
+                                     <OutputOptionsMenu posX={outputOptionsPosition.x} posY={outputOptionsPosition.y}
+                                         setshowoutputOptions={setshowoutputOptions}
+                                         setoutputConnectionEstablished={setoutputConnectionEstablished}
+                                         setisLive={setisLive} />
+                                 </div>
+                                 )}
+                             </div>
+                             }
+                         </div>
+                         {
+                         finaloutputLine &&
+                         <div
+                             style={{ paddingLeft: "24px", paddingRight: "24px", textAlign: "left", alignItems: "center", display: 'flex', flex: 1, display: "flex" }}>
+                             <span
+                                 style={{ fontSize: '14px', fontWeight: "600", color: "#FF3939" }}>{finaloutputLine}
+                             </span>
+                         </div>
+                         }
+
+                         <div style={{ flex: outputConnectionEstablished }}></div>
+                         {
+                         outputConnectionEstablished !== 1 &&
+                         <div style={{ marginBottom: "20px" }}>
+                             <button
+                                 style={{ width: "164px", height: "53px", backgroundColor: "#FF3939", border: "none", borderRadius: "4px", cursor: "pointer", flex: 1 }}
+                                 onClick={openConnectNowModal}>
+                                 <span style={{ color: "white" }}>Connect Now</span>
+                             </button>
+                         </div>
+                         }
+                     </div>
+
+                     <div className='externalConnection'>
+                         <div
+                             style={{ display: "flex", justifyContent: "flex-start", alignItems: "center", marginTop: "20px", marginLeft: "24px", gap: "5px" }}>
+                             <span
+                                 style={{ fontSize: '14px', fontWeight: "600", color: "#FFFFFF" }}>Remote
+                                 Connection Code</span>
+                             <div
+                                 style={{ marginTop: "3px", height: "11px", width: "11px", borderRadius: "50%", backgroundColor: externalConnectionConnectionEstablished === 0 ? "transparent" : "#3EDB57" }}>
+                             </div>
+                         </div>
+                         {
+                         externalConnectionConnectionEstablished === 0 ?
+                         <div
+                             style={{ paddingLeft: "24px", paddingRight: "24px", textAlign: "left", lineHeight: 1 }}>
+                             <span
+                                 style={{ listStyleType: "none", marginBottom: "24px", fontSize: '14px', fontWeight: "500", color: "#B1B1B1", textAlign: "left" }}>Generate
+                                 connection code for output connection to streaming software on this system.</span>
+                         </div> :
+                         <div style={{}}>
+                             <div
+                                 style={{ textAlign: "center", display: "flex", justifyContent: "center", alignItems: "center", }}>
+                                 <span
+                                     style={{ fontSize: '40px', fontWeight: "600", color: "#B1B1B1", textAlign: "center" }}>{hours
+                                     > 0 ? hours + ":" : ""}{minutes > 9 ? minutes : "0" + minutes}:{seconds > 9 ?
+                                     seconds : "0" + seconds}</span>
+                             </div>
+                             <div
+                                 style={{ paddingLeft: "24px", paddingRight: "24px", display: "flex", flexDirection: "column", gap: "8px", marginTop: "20px", }}>
+                                 <span
+                                     style={{ fontSize: '14px', fontWeight: "600", color: "#FFFFFF", textAlign: "center" }}>Code:
+                                     {externalConnectionPasscode} <Copy size="14" color="#FFFFFF" onClick={()=> {
+                                         navigator.clipboard.writeText(externalConnectionPasscode);
+                                         copiedToaster()
+                                         }} style={{ cursor: "pointer" }} /></span>
+
+                             </div>
+                         </div>
+                         }
+                         <div>
+                             {
+                             externalConnectionConnectionEstablished === 0 ?
+                             <button
+                                 style={{ width: "164px", height: "53px", backgroundColor: "#15181C", border: "1px solid #FF3939", borderRadius: "4px", marginBottom: "20px", cursor: "pointer" }}
+                                 onClick={externalConnectionConnectionEstablished===0 ? openGenerateURLModal :
+                                 destroyCreatedUrl}>
+                                 <span style={{ color: "#FF3939" }}>Generate Code</span>
+                             </button>
+                             :
+                             <button
+                                 style={{ width: "164px", height: "53px", marginTop: "20px", backgroundColor: "#FF3939", borderRadius: "4px", marginBottom: "20px", cursor: "pointer", border: "none" }}
+                                 onClick={externalConnectionConnectionEstablished===0 ? openGenerateURLModal :
+                                 destroyCreatedUrl}>
+                                 <span style={{ color: "#ffffff" }}>Stop Connection</span>
+                             </button>
+
+                             }
+                         </div>
+                     </div>
+                 </div>
+                 <div>
+                     <ToastContainer position="bottom-center" autoClose={5000} hideProgressBar={false}
+                         newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover
+                         theme="colored"
+                         style={{ width: "60vw", height: "56px" }} />
+                 </div>
+             </div>
+         </div>
+         <DeleteSongModal isOpen={isDeleteModalOpen} onClose={()=> closeDeleteModal()} song={deleteSong} />
+             <CreateSongModal isOpen={isModalOpen} onClose={()=> closeModal()} onSubmit={handleFormSubmit} title={title}
+                 setTitle={setTitle} body={body} setBody={setBody} />
+                 <EditSongModal isOpen={isEditModalOpen} onClose={()=> closeModal(1)} onSubmit={handleFormSubmitEdit}
+                     title={title} setTitle={setTitle} body={body} setBody={setBody} />
+                     <ImportSongsModal isOpen={isImportModalOpen} onClose={closeImportModal} importing={importing}
+                         setimporting={setimporting} />
+                     <ConnectNowModal isOpen={isConnectNowModalOpen} onClose={closeConnectNowModal}
+                         outputUrl={outputUrl} setoutputUrl={setoutputUrl} outputPasscode={outputPasscode}
+                         setoutputPasscode={setoutputPasscode} outputConnectionSoftware={outputConnectionSoftware}
+                         setoutputConnectionSoftware={setoutputConnectionSoftware}
+                         outputConnectionEstablished={outputConnectionEstablished}
+                         setoutputConnectionEstablished={setoutputConnectionEstablished} />
+                     <GenerateURLModal isOpen={isGenerateURLModalOpen} onClose={closeGenerateURLModal}
+                         externalConnectionUrl={externalConnectionUrl}
+                         setexternalConnectionUrl={setexternalConnectionUrl}
+                         externalConnectionPasscode={externalConnectionPasscode}
+                         setexternalConnectionPasscode={setexternalConnectionPasscode}
+                         externalConnectionConnectionEstablished={externalConnectionConnectionEstablished}
+                         setexternalConnectionConnectionEstablished={setexternalConnectionConnectionEstablished}
+                         start={start} />
+     </div>
+ </>

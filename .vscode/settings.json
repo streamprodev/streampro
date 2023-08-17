@@ -1,0 +1,11 @@
+{
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "database": "C:\\Users\\Folakunmi\\OneDrive - Princeps Credit Systems\\Documents\\StreamPro\\database.sqlite",
+            "name": "StreamPro"
+        }
+    ],
+    "sqltools.useNodeRuntime": true
+}

@@ -1,0 +1,563 @@
+*::-webkit-scrollbar {
+    width: 6px;  
+    height: 8px;  
+    background: transparent;  /* Optional: just make scrollbar invisible */
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;        /* color of the tracking area */
+}
+*::-webkit-scrollbar-thumb {
+  background-color: #B1B1B1 ;    /* color of the scroll thumb */
+  border-radius: 8px; /* creates padding around scroll thumb */
+}
+*::-webkit-scrollbar-corner {
+  background-color: transparent;    /* color of the scroll thumb */
+  border-radius: 8px; /* creates padding around scroll thumb */
+}
+
+.App {
+  text-align: center;
+}
+/* .App::-webkit-scrollbar {
+    width: 0;  
+    background: transparent;  
+} */
+
+
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    /* animation: App-logo-spin infinite 20s linear; */
+    width: 20%;
+    height: 20%;
+  }
+}
+ /* background: transparent;   */
+
+
+.App-header {
+  background-color: #121212;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+.App-header2 { 
+  background-color: #121212;
+  height: calc(100vh - 20px);
+  min-width: 1440px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  font-size: calc(10px + 2vmin);
+  color: white;
+  gap:24px;
+  overflow: 'auto';
+}
+.App-header2::-webkit-scrollbar {
+    width: 0;  
+    background: transparent;  /* Optional: just make scrollbar invisible */
+}
+
+.App-header2::-webkit-scrollbar-track {
+  background: transparent;        /* color of the tracking area */
+}
+.App-header2::-webkit-scrollbar-thumb {
+  background-color: #121212;    /* color of the scroll thumb */
+  border-radius: 8px; /* creates padding around scroll thumb */
+}
+
+.SideBar {
+  background-color: #15181C;
+  height: 100vh;
+  width: 191px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  font-size: calc(10px + 2vmin);
+  color: white;
+  position: fixed;
+  z-index: 5;
+}
+.main-section {
+  /* background-color: #166fe3; */
+  height: 98%;
+  flex: 1;
+  /* min-width: calc(1440px - 191px); */
+  padding-left: 215px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  font-size: calc(10px + 2vmin);
+  color: white;
+  gap:24px;
+  padding-top: 14px;
+  margin-right: 15px;
+  overflow: auto;
+}
+
+.main-section::-webkit-scrollbar {
+    width: 0;  /* Remove scrollbar space */
+    background: transparent;  /* Optional: just make scrollbar invisible */
+}
+
+.NavBar {
+  background-color: #121212;
+  /* height: 40px; */
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+  /* padding-top: 5px; */
+}
+
+.MainBody {
+  /* background-color: #ed9a0c; */
+  height: calc(100vh - 150px);
+  /* width: 100%; */
+  flex:1;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  font-size: calc(10px + 2vmin);
+  color: white;
+  padding-top: 5px;
+  /* gap:24px; */
+  padding-bottom: 14px;
+  
+}
+.MainBody::-webkit-scrollbar {
+    width: 0;  /* Remove scrollbar space */
+    background: transparent;  /* Optional: just make scrollbar invisible */
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+.bookmarkXsong {
+  /* background-color: #b5194d; */
+  /* max-height: 100%; */
+  width: 470px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  font-size: calc(10px + 2vmin);
+  color: white;
+  gap:24px;
+  margin-Right:24px;
+}
+.bookmarkXbooks {
+  /* background-color: #b5194d; */
+  /* max-height: 100%; */
+  width: 470px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  font-size: calc(10px + 2vmin);
+  color: white;
+  gap:24px;
+  margin-Right:24px;
+}
+
+.bookmarks {
+  background-color: #15181C;
+  /* height: 36.91%; */
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  font-size: calc(10px + 2vmin);
+  color: white;
+  border-radius: 4px;
+}
+
+.song-body::-webkit-scrollbar {
+    width: 0;  /* Remove scrollbar space */
+    background: transparent;  /* Optional: just make scrollbar invisible */
+}
+
+.songsList {
+  background-color: #15181C;
+  /* width: 100%; */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  font-size: calc(10px + 2vmin);
+  color: white;
+  gap:24px;
+  border-radius: 4px;
+}
+.song {
+  background-color: #15181C;
+  height: 100%;
+  width: 620px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  font-size: calc(10px + 2vmin);
+  color: white;
+  gap:24px;
+  border-radius: 4px;
+  margin-Right:24px;
+}
+.bible {
+  background-color: #15181C;
+  height: 100%;
+  width: 620px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  font-size: calc(10px + 2vmin);
+  color: white;
+  gap:24px;
+  border-radius: 4px;
+  margin-Right:24px;
+}
+
+.connectionsXnotes {
+  /* background-color: #15181C; */
+  /* height: 100%; */
+  width: 37%;
+  /* flex:1; */
+  /* max-height: 100vh; */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  font-size: calc(10px + 2vmin);
+  color: white;
+  gap:24px;
+  overflow: scroll;
+}
+
+.finaloutput {
+  background-color: #15181C;
+  min-height: 30%;
+  width: 100%;
+  flex:1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-size: calc(10px + 2vmin);
+  color: white;
+  gap:5px;
+  border-radius: 4px;
+  padding-bottom: 20px;
+  
+}
+.preview {
+  background-color: #15181C;
+  /* height: 100%; */
+  width: 100%;
+  flex:1;
+  display: flex;
+  flex-direction: column;
+  justify-content: "space-between";
+  font-size: calc(10px + 2vmin);
+  color: white;
+  gap:20px;
+  border-radius: 4px;
+  position: relative;
+}
+.externalConnection {
+  background-color: #15181C;
+  /* height: 100%; */
+  width: 100%;
+  flex:1.3;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-size: calc(10px + 2vmin);
+  color: white;
+  gap:24px;
+  border-radius: 4px;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.search-box {
+  position: relative;
+  width: 59%;
+  height: 32px;
+  /* background-color: #15181C; */
+}
+
+.search-input {
+  width: 100%;
+  height: 30px;
+  padding: 6px 16px 6px 16px;
+  outline: none;
+  font-size: 14px;
+  color: transparent;
+  font-style: italic;
+  color: #B1B1B1;
+  background-color: #15181C;
+  border: 1px solid #B1B1B1;
+  border-radius: 4px;
+}
+.search-input-bible {
+   width: 100%;
+  height: 33px;
+  padding: 6px 16px 6px 16px;
+  outline: none;
+  font-size: 14px;
+  color: transparent;
+  font-style: italic;
+  color: #B1B1B1;
+  background-color: #15181C;
+  border: 1px solid #B1B1B1;
+  border-radius: 4px;
+}
+.scripture-input-book {
+  border: none;
+  border-bottom: 1px solid #fff;
+  outline: none;
+  color:#fff;
+  background:transparent;
+  padding:0 0;
+  margin:0;
+  margin-left:5px;
+  line-height: 1px;
+  height:16px; 
+  width: 49px;
+  align-self:center;
+  cursor: pointer;
+}
+
+.scripture-input-book + .rah-hint-wrapper .rah-hint {
+  color: rgba(255, 255, 255, 0.5) !important;
+  /* height:15px !important;  */
+  /* line-height: 1px !important; */
+}
+
+.rah-hint-wrapper{
+  top:3px !important;
+}
+
+.search-input-nav {
+  width: 100%;
+  height: 30px;
+  padding: 6px 16px 6px 16px;
+  outline: none;
+  font-size: 14px;
+  color: transparent;
+  font-style: italic;
+  color: #B1B1B1;
+  background-color: #15181C;
+  border: none;
+  border-radius: 30px;
+  padding-top: 2px;
+  position: relative;
+}
+
+.search-icon {
+  position: absolute;
+  top: 50%;
+  right: 35%;
+  transform: translateY(-50%);
+  font-family: 'iconsax', sans-serif;
+  font-size: 16px;
+  color: #999;
+}
+.MuiSwitch-action	 {
+  margin-left: -50px;
+  width: 100px;
+}
+
+.AddNew:hover{
+  /* background-color: yellow; */
+  color: #FF3939;
+}
+.ImportSong:hover {
+  /* background-color: yellow; */
+  color: #FF3939;
+}
+
+.bookmark-hide {
+    height: 58px;
+    overflow: hidden;
+    transition: height ease 0.5s;
+}
+    
+.bookmark-show {
+    height: 34%;
+    transition: height ease 0.5s;
+}
+.books-hide {
+    height: 25px;
+    overflow: hidden;
+    transition: height ease 0.5s;
+}
+    
+.books-show {
+    height:65vh;
+    /* flex:1; */
+    transition: height ease 0.5s;
+}
+
+.books {
+  background-color: #15181C;
+  max-height: 36.91%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  font-size: calc(10px + 2vmin);
+  color: white;
+  border-radius: 4px;
+}
+
+#titlebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 30px;
+    /* padding-left: 0px; */
+    /* padding-top : 0px; */
+    box-sizing: border-box;
+    border: none;
+    
+    /* border-bottom: 0.5px solid white ; */
+    
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#15181C', endColorstr='#15181C',GradientType=0 );
+}
+
+.draggable {
+    padding: 8px;
+    padding-top: 0;
+    padding-left: 0;
+    font-family: sans-serif;
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+    -webkit-app-region: drag;
+}
+
+.controls {
+  margin-left: auto;
+  display: block;
+    -webkit-app-region: no-drag;
+    user-select: none;
+    
+    /* padding-top: 7px; */
+    height: 20px;
+}
+
+.button {
+    display: inline-block;
+    width: 55px;
+    height: 20px;
+    padding-top: 7px;
+    /* border-radius: 100%; */
+    cursor: pointer;
+}
+
+.button.close { background: transparent; }
+.button.minimize { background: transparent; }
+.button.maximize { background: transparent;  }
+
+.button.close:hover { background: #F1707A !important; }
+.button.minimize:hover { background: rgba(255,255,255,0.1); } 
+.button.maximize:hover { background: rgba(255,255,255,0.1); }
+
+.title {
+    /* opacity: .5; */
+    padding-right: 0;
+    width: 191px;
+    /* height: 100%; */
+    background:transparent;
+    background: -moz-linear-gradient(top,  #15181C 0%, #15181C 50%);
+    background: -webkit-linear-gradient(top,  #15181C 0%,#15181C 50%);
+    background: linear-gradient(to bottom,  #15181C 0%,#15181C 50%); 
+}
+
+.inputMask{
+  width: 60%;
+  height: 40px;
+  font-size: 20px;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  background:#15181C
+}
+
+#wrapper {
+    opacity: 0.4;
+    filter: alpha(opacity=40); /* msie */
+    background-color: #35353513;
+}
+
+.accountmenu {
+  box-shadow: 1px 1px 7px 4px #262626;
+}
+.rah-hint .rah-text-filler .rah-hint-wrapper {
+  color:#fff !important
+}
+.hint-body {
+  color:#fff !important
+}
+
+.BooksList {
+  background-color: #15181C;
+  /* max-height: 36.91%; */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  font-size: calc(10px + 2vmin);
+  color: white;
+  gap:24px;
+  border-radius: 4px;
+}
+
+.bible-bookmarks {
+  background-color: #15181C;
+  /* max-height: 36.91%; */
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  font-size: calc(10px + 2vmin);
+  color: white;
+  border-radius: 4px;
+}
+
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0; 
+}
+
+.search-one-line {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+}
+
+
+
