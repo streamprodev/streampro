@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
 import SideBar from '../../SideBar';
 import CreateSongModal from '../../CreateSongModal';
-import { Copy, Edit2, ProfileCircle, SearchNormal, Setting2, ArrowDown2, ArrowUp2, ArrowLeft } from 'iconsax-react';
+import { Copy, Edit2, ProfileCircle, SearchNormal, Setting2, ArrowDown2, ArrowUp2, ArrowLeft, Maximize4 } from 'iconsax-react';
 import ImportSongsModal from '../../ImportSongsModal';
 import SongListItem from '../../SongListItem';
 import MiniSearch from 'minisearch'
@@ -40,9 +40,16 @@ function Bible() {
 
     return (
         <div className='song' style={{ width: expandedView ? "1000px" : "620px" }}>
-            {!expandedView ? <LuExpand size={18} style={{ border: "1px solid", cursor: "pointer", padding: '2px', borderRadius: "4px", borderColor: expandedView ? "#FF3939" : "#FFFFFF", position: "relative", top: "5%", left: "90%" }} color={expandedView ? "#FF3939" : "#FFFFFF"} onClick={() => setexpandedView(prev => !prev)} />
+            {!expandedView ?
+                <div style={{ position: "relative", top: "5%", left: "90%", width: "30px" }} title='Maximize'>
+
+                    <Maximize4 size={18} style={{ border: "none", cursor: "pointer", padding: '2px', borderRadius: "4px", borderColor: expandedView ? "#FF3939" : "#FFFFFF",  }} color={expandedView ? "#FF3939" : "#FFFFFF"} onClick={() => setexpandedView(prev => !prev)} />
+                </div>
                 :
-                <LuShrink size={18} style={{ border: "1px solid", cursor: "pointer", padding: '2px', borderRadius: "4px", borderColor: expandedView ? "#FF3939" : "#FFFFFF", position: "relative", top: "5%", left: "90%" }} color={expandedView ? "#FF3939" : "#FFFFFF"} onClick={() => setexpandedView(prev => !prev)} />
+                <div style={{ position: "relative", top: "5%", left: "92%", width: "30px" }} title='Minimize'>
+
+                    <Maximize4 size={18} style={{ border: "none", cursor: "pointer", padding: '2px', borderRadius: "4px", borderColor: expandedView ? "#FF3939" : "#FFFFFF" }} color={expandedView ? "#FF3939" : "#FFFFFF"} onClick={() => setexpandedView(prev => !prev)} />
+                </div>
             }
 
             {/* <SelectChapterXVerse type={'chapter'} /> */}

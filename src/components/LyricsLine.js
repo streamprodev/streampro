@@ -14,8 +14,8 @@ const LyricsLine = ({ line, index, activeLine, setactiveLine, parentRef, ownRef 
         let eTop = element.offsetTop;
         let eBottom = eTop + element.clientHeight;
         let scrollDirection = null;
-        console.log(eTop , cTop,'top')
-        console.log(eBottom, cBottom,'bottom')
+        // console.log(eTop , cTop,'top')
+        // console.log(eBottom, cBottom,'bottom')
         if ((eTop < cTop)) {
             scrollDirection = "end"
         }

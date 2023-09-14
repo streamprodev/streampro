@@ -33,6 +33,7 @@ import Bible from './BibleBody/Bible';
 import BibleBody from './BibleBody/BibleBody';
 import { Route, Routes } from 'react-router-dom';
 import { usePreviewXOutput } from '../../context/PreviewXOutputContext';
+import { useBible } from '../../context/BibleContext';
 const { ipcRenderer } = window.require('electron');
 
 function MainBody() {
@@ -41,6 +42,7 @@ function MainBody() {
     const { songData, setmenuEditId } = useSong()
 
     const { registrationInfo, setregistrationInfo, deviceHostName, openNotifyModal } = useRegistrationInfo()
+    const { expandedView, setexpandedView } = useBible()
 
     useEffect(() => {
         ipcRenderer.on('setSyncingToaster', setSyncingToasterf);
@@ -204,7 +206,7 @@ function MainBody() {
         <div className='App-header2' style={{ paddingTop: "20px" }}>
 
             <SideBar />
-            <div className='main-section'>
+            <div className='main-section' style={{ paddingLeft: !expandedView ? "215px" : "70px" }}>
                 <NavBar />
                 <div className='MainBody'>
                     <Routes>

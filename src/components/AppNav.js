@@ -9,15 +9,18 @@ import { FiMinimize2 } from "react-icons/fi";
 import minimize from "../assets/titlebar-icons/min-w-10.png";
 import maximize from "../assets/titlebar-icons/max-w-10.png";
 import close from "../assets/titlebar-icons/close-w-10.png";
+import { useBible } from '../context/BibleContext';
 const { ipcRenderer } = window.require('electron');
 
 
 const AppNav = () => {
 
+    const { expandedView, setexpandedView } = useBible()
+
     return (
         <header id="titlebar">
             <div className="draggable">
-                <div className="title">
+                <div className="title" style={{ width: expandedView ? "50px" : "191px" }}>
                     {/* <script>document.write(document.title)</script> */}
                 </div>
                 <div className="controls">

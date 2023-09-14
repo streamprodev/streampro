@@ -80,7 +80,7 @@
 .SideBar {
   background-color: #15181C;
   height: 100vh;
-  width: 191px;
+  /* width: 191px; */
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -94,7 +94,7 @@
   height: 98%;
   flex: 1;
   /* min-width: calc(1440px - 191px); */
-  padding-left: 215px;
+  /* padding-left: 215px; */
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -245,7 +245,7 @@
 
 .finaloutput {
   background-color: #15181C;
-  min-height: 30%;
+  /* min-height: 30%; */
   width: 100%;
   flex:1;
   display: flex;
@@ -485,7 +485,7 @@
 .title {
     /* opacity: .5; */
     padding-right: 0;
-    width: 191px;
+    /* width: 191px; */
     /* height: 100%; */
     background:transparent;
     background: -moz-linear-gradient(top,  #15181C 0%, #15181C 50%);
@@ -557,6 +557,19 @@ input[type=number]::-webkit-outer-spin-button {
   display: -webkit-box;
   -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
+}
+
+@keyframes blinking {
+  0%,100% {
+    background-color: #ec9706;
+  }
+  50% {
+    background-color: #3EDB57;
+  }
+  
+}
+#blink {
+  animation: blinking 1s infinite;
 }
 
 

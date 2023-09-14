@@ -18,6 +18,8 @@ const OutputOptionsMenu = ({ posX, posY, setshowoutputOptions, setoutputConnecti
     const { showAccountMenu, setshowAccountMenu, showAccountMenuPosition, AccountMenuRef, registrationInfo, getRandomColor } = useRegistrationInfo();
 
     useEffect(() => {
+        console.log(AccountMenuRef)
+        console.log(showAccountMenu)
         const handleOutsideClick = (e) => {
 
             if (AccountMenuRef.current && !AccountMenuRef.current.contains(e.target)) {

@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
 import SideBar from '../../SideBar';
 import CreateSongModal from '../../CreateSongModal';
-import { Copy, Edit2, ProfileCircle, SearchNormal, Setting2, ArrowDown2, ArrowUp2, ArrowLeft, Magicpen } from 'iconsax-react';
+import { CpuSetting, Edit2, ProfileCircle, SearchNormal, Setting2, ArrowDown2, ArrowUp2, ArrowLeft, Magicpen, Pharagraphspacing, Brush2 } from 'iconsax-react';
 import ImportSongsModal from '../../ImportSongsModal';
 import SongListItem from '../../SongListItem';
 import MiniSearch from 'minisearch'
@@ -29,7 +29,7 @@ import { FaEllipsisH } from "react-icons/fa";
 const { ipcRenderer } = window.require('electron');
 
 function SearchScripture() {
-    const { activeChapterContent, selectedBook, selectedChapter, searchData, setsearchData, setChapterContent, setsearchBookObj, setsearchBook, setsearchChapter, setsearchVerse, setbibleView, books, setselectedChapter, chapters, showOneLine, setshowOneLine, showHilighted, setshowHilighted, searchResultRef, setsearchResultRef } = useBible()
+    const { activeChapterContent, selectedBook, selectedChapter, searchData, setsearchData, setChapterContent, setsearchBookObj, setsearchBook, setsearchChapter, setsearchVerse, setbibleView, books, setselectedChapter, chapters, showOneLine, setshowOneLine, showHilighted, setshowHilighted, searchResultRef, setsearchResultRef, showAllSearch, setshowAllSearch } = useBible()
 
 
     return (
@@ -38,8 +38,15 @@ function SearchScripture() {
             <span style={{ fontSize: '18px', fontWeight: "600", color: "#FFFFFF", marginTop: "50px", textAlign: "center", }}>Search Result </span>
             <div style={{ display: "flex", justifyContent: "center", gap: "10px", marginTop: "-10px" }}>
                 <div style={{ display: "flex", gap: "10px", alignItems: "center", cursor: "pointer" }} onClick={() => { }} >
-                    <Magicpen size={18} style={{ border: "1px solid", cursor: "pointer", padding: '2px', borderRadius: "4px", borderColor: showHilighted ? "#FF3939" : "#FFFFFF" }} color={showHilighted ? "#FF3939" : "#FFFFFF"} onClick={() => setshowHilighted(prev => !prev)} />
-                    <FaEllipsisH size={18} style={{ border: "1px solid", cursor: "pointer", padding: '2px', borderRadius: "4px", borderColor: showOneLine ? "#FF3939" : "#FFFFFF" }} color={showOneLine ? "#FF3939" : "#FFFFFF"} onClick={() => setshowOneLine(prev => !prev)} />
+                    <div title={showOneLine ? "Show in full" : "Reduce to one line"}>
+                        <Pharagraphspacing size={18} style={{ border: "none", cursor: "pointer", padding: '2px', borderRadius: "4px", borderColor: showOneLine ? "#FF3939" : "#FFFFFF" }} color={showOneLine ? "#FFFFFF" : "#FF3939"} onClick={() => setshowOneLine(prev => !prev)} />
+                    </div>
+                    <div title={showHilighted ? "Remove keyword highlight" : "Show keyword highlights"}>
+                        <Brush2 size={18} style={{ border: "none", cursor: "pointer", padding: '2px', borderRadius: "4px", borderColor: showHilighted ? "#FF3939" : "#FFFFFF" }} color={showHilighted ? "#FF3939" : "#FFFFFF"} onClick={() => setshowHilighted(prev => !prev)} title="Coming Soon" />
+                    </div>
+                    <div title={showAllSearch ? "Disable strict search" : "Enable strict search"}>
+                        <CpuSetting size={18} style={{ border: "none", cursor: "pointer", padding: '2px', borderRadius: "4px", borderColor: showAllSearch ? "#FF3939" : "#FFFFFF" }} color={showAllSearch ? "#FF3939" : "#FFFFFF"} onClick={() => setshowAllSearch(prev => !prev)} />
+                    </div>
                     {/* <span style={{ fontSize: '12px', fontWeight: "500" }}>Back to Chapters</span> */}
                 </div>
             </div>

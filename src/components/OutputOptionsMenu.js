@@ -8,12 +8,28 @@ import LowerToast from './LowerToast';
 
 const { ipcRenderer } = window.require('electron');
 
-const OutputOptionsMenu = ({ posX, posY, setshowoutputOptions, setoutputConnectionEstablished, setisLive }) => {
-
+const OutputOptionsMenu = ({ posX, posY, setshowoutputOptions, setoutputConnectionEstablished, setisLive, setreconnectingStatus, showoutputOptions, outputOptionsRef, iconRef }) => {
 
     // const { anchorPoint, show } = useContextMenu(type);
 
 
+    useEffect(() => {
+        const handleOutsideClick = (e) => {
+
+            if (outputOptionsRef.current && !outputOptionsRef.current.contains(e.target) && !iconRef.current.contains(e.target)) {
+                setshowoutputOptions(false);
+            }
+        };
+
+        setTimeout(() => {
+
+        }, 100);
+        window.addEventListener('click', handleOutsideClick);
+
+        return () => {
+            window.removeEventListener('click', handleOutsideClick);
+        };
+    }, []);
 
 
 
@@ -53,6 +69,8 @@ const OutputOptionsMenu = ({ posX, posY, setshowoutputOptions, setoutputConnecti
                     setoutputConnectionEstablished(0)
                     setisLive(false)
                     setshowoutputOptions(false)
+                    setreconnectingStatus(false)
+                    ipcRenderer.send('stopOutputConnectionCheck', 'Session closed successfully')
 
                     toast(<LowerToast status={'success'} message={'Connection closed!'} />, {
                         position: "bottom-center",

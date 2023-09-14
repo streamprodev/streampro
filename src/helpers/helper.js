@@ -1,6 +1,7 @@
 
 const { app } = require('electron');
 const fs = require('fs');
+var fse = require('fs-extra');
 
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
@@ -19,6 +20,38 @@ exports.inititateDB = async () => {
 
     db.run(("CREATE TABLE IF NOT EXISTS registration_info (id INTEGER PRIMARY KEY,uuid TEXT, license_key TEXT, license_owner TEXT, license_owner_email TEXT,ngrok_key TEXT,ngrok_bearertoken TEXT,device_id TEXT,device_name TEXT,firestore_apikey TEXT TEXT,firestore_projectid TEXT,firestore_appid TEXT,last_sync_date timestamp, documentid TEXT,auto_sync TEXT default 0, created TIMESTAMP, updated TIMESTAMP  default current_timestamp)"));
 
+    var exec = require('child_process').exec;
+
+    // exec("runas /noprofile /user:Administrator chmod -R 777 'C:/Program Files (x86)/vMix/titles'",
+    //     function (error, stdout, stderr) {
+    //         console.log('stdout: ' + stdout);
+    //         console.log('stderr: ' + stderr);
+    //         if (error !== null) {
+    //             console.log('exec error: ' + error);
+    //         }
+    //     });
+    // exec("cp src/helpers/handlers.js 'C:/Program Files (x86)/vMix/titles'",
+    //     function (error, stdout, stderr) {
+    //         console.log('stdout: ' + stdout);
+    //         console.log('stderr: ' + stderr);
+    //         if (error !== null) {
+    //             console.log('exec error: ' + error);
+    //         }
+    //     });
+
+    var sourceDir = '/tmp/mydir';
+    var destDir = 'C:/Program Files (x86)/vMix/titles';
+
+
+    // if folder doesn't exists create it
+    if (!fs.existsSync(destDir)) {
+        fs.mkdirSync(destDir, { recursive: true });
+    }
+
+    fse.copy('resources/vmix-assets', destDir, (err) => {
+        if (err) throw err;
+        console.log('File was copied to destination');
+    });
 
     setTimeout(() => {
         db.run(("CREATE UNIQUE INDEX IF NOT EXISTS idx_songs_uuid ON songs(uuid)"));

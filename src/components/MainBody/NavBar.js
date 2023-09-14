@@ -22,7 +22,10 @@ import OutputOptionsMenu from '../OutputOptionsMenu';
 import { useSong } from '../../context/SongContext';
 import { useRegistrationInfo } from '../../context/RegistrationInfoContext';
 import AccountMenu from '../AccountMenu';
+import exportFromJSON from 'export-from-json'
+import { saveAs } from 'file-saver';
 const { ipcRenderer } = window.require('electron');
+
 
 function NavBar() {
 
@@ -38,6 +41,21 @@ function NavBar() {
         }
     }, []);
 
+    const exportSongs=()=>{
+        const zip = require('jszip')();
+        // console.log(songData)
+        songData.forEach((songg)=>{
+            // const file = `data:text/;chatset=utf-8,${encodeURIComponent(
+            //     JSON.stringify(songg.body)
+            // )}`
+            zip.file(songg.title + ".txt", songg.body);
+
+        })
+        zip.generateAsync({ type: "blob" }).then(content => {
+            saveAs(content, "export.zip");
+        });
+        // exportFromJSON({ data: songData[0], fileName: 'data', exportType: exportFromJSON.types.txt })
+    }
 
     const handleShowAccountMenu = (e) => {
 
@@ -134,8 +152,13 @@ function NavBar() {
                 <input type="text" placeholder="Search" className="search-input-nav" />
                 <SearchNormal style={{ position: "absolute", top: "20%", right: "4%" }} size={20} />
             </div>
-            <div style={{ display: "flex", alignItems: 'center', gap: "105px" }}>
+            <div style={{ display: "flex", alignItems: 'center', gap: "55px" }}>
+                <div style={{display:"flex",flexDirection:"row",gap:"10px"}}>
                 <p style={{ fontWeight: "600", fontSize: "12px", background: "#15181C", textAlign: "center", cursor: "pointer" }} className='ImportSong' onClick={openImportModal}>Import Songs</p>
+                    <p style={{ fontWeight: "600", fontSize: "12px", background: "#15181C", textAlign: "center", cursor: "pointer", color:"#FF3939" }} className='ImportSong' onClick={exportSongs}>|</p>
+                    <p style={{ fontWeight: "600", fontSize: "12px", background: "#15181C", textAlign: "center", cursor: "pointer",  }} className='ImportSong' onClick={exportSongs}>Export Songs</p>
+
+                </div>
                 <div style={{ display: "flex", alignItems: 'center', gap: 21, marginRight: "15px" }}>
                     {/* <ProfileCircle size="24" /> */}
                     <div style={{ height: "30px", width: "30px", borderRadius: "16px", backgroundColor: registrationInfo.license_owner && getRandomColor(registrationInfo.license_owner).color, fontSize: "20px", cursor: "pointer" }} onClick={handleShowAccountMenu}>

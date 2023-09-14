@@ -34,10 +34,58 @@ function PreviewXOutput() {
 
     // const [outPutType, setoutPutType] = useState('song');
     const {
-        outputLine, setoutputLine, setngrokUrlError, ngrokStatus, setngrokStatus, outputOptionsPosition, setoutputOptionsPosition, showoutputOptions, setshowoutputOptions, isLive, setisLive, externalConnectionConnectionEstablished, setexternalConnectionConnectionEstablished, externalConnectionPasscode, setexternalConnectionPasscode, externalConnectionUrl, setexternalConnectionUrl, outputConnectionEstablished, setoutputConnectionEstablished, outputConnectionSoftware, setoutputConnectionSoftware, outputPasscode, setoutputPasscode, outputUrl, setoutputUrl, finaloutputLine, setfinaloutputLine, seconds, minutes, hours, days, isRunning, start, pause, reset, copiedToaster, vmixDisconected, isConnectNowModalOpen, setIsConnectNowModalOpen, isGenerateURLModalOpen, setisGenerateURLModalOpen, outputOptionsRef, handleShowOutputOption } = usePreviewXOutput();
+        outputLine, setoutputLine, setngrokUrlError, ngrokStatus, setngrokStatus, outputOptionsPosition, setoutputOptionsPosition, showoutputOptions, setshowoutputOptions, isLive, setisLive, externalConnectionConnectionEstablished, setexternalConnectionConnectionEstablished, externalConnectionPasscode, setexternalConnectionPasscode, externalConnectionUrl, setexternalConnectionUrl, outputConnectionEstablished, setoutputConnectionEstablished, outputConnectionSoftware, setoutputConnectionSoftware, outputPasscode, setoutputPasscode, outputUrl, setoutputUrl, finaloutputLine, setfinaloutputLine, seconds, minutes, hours, days, isRunning, start, pause, reset, copiedToaster, vmixDisconected, isConnectNowModalOpen, setIsConnectNowModalOpen, isGenerateURLModalOpen, setisGenerateURLModalOpen, outputOptionsRef, handleShowOutputOption, reconnectingStatus, setreconnectingStatus, generatereconnectingStatus, setgeneratereconnectingStatus } = usePreviewXOutput();
 
     const { activeSongArray, activeLine, setactiveLine, outPutType, setoutPutType } = useSong()
-    const { activeChapterContent, selectActiveVersion, selectedVerseArray, setselectedVerseArray } = useBible()
+    const { activeChapterContent, selectActiveVersion, selectedVerseArray, setselectedVerseArray, multipleselectedVerseArray, setmultipleselectedVerseArray, getVerseText } = useBible()
+
+    const iconRef = useRef(null)
+    // const [reconnectingStatus, setreconnectingStatus] = useState(false)
+
+    useEffect(() => {
+        ipcRenderer.on('setReconnecting', setReconnecting)
+
+        return () => {
+            ipcRenderer.removeListener('setReconnecting', setReconnecting)
+        }
+    }, [outputConnectionEstablished]);
+    useEffect(() => {
+        ipcRenderer.on('setGenerateReconnecting', setGenerateReconnecting)
+
+        return () => {
+            ipcRenderer.removeListener('setGenerateReconnecting', setGenerateReconnecting)
+        }
+    }, [externalConnectionConnectionEstablished]);
+
+    const setReconnecting = (event, data) => {
+        // console.log('status', data)
+        if (outputConnectionEstablished) {
+            if (data == 'close') {
+
+            } else {
+
+                setreconnectingStatus(data)
+            }
+        }
+        if (isLive) {
+        }
+
+    }
+    const setGenerateReconnecting = (event, data) => {
+        console.log('status', data)
+        if (externalConnectionConnectionEstablished) {
+            if (data == 'close') {
+
+            } else {
+
+                // generatereconnectingStatus
+                setgeneratereconnectingStatus(data)
+            }
+        }
+        if (isLive) {
+        }
+
+    }
 
 
     const openConnectNowModal = () => {
@@ -97,7 +145,7 @@ function PreviewXOutput() {
                     setactiveLine(prev => prev + 1)
                 } else {
                     if (activeLine !== -1 && activeChapterContent) {
-
+                        // console.log(activeChapterContent)
                         setoutputLine(selectedVerseArray.text)
                         // setoutputLine(activeChapterContent[activeLine].text)
                     } else {
@@ -105,8 +153,15 @@ function PreviewXOutput() {
                     }
                 }
             }
+            // console.log(activeLine)
         }
-    }, [activeLine, activeChapterContent]);
+    }, [activeLine, multipleselectedVerseArray, activeChapterContent]);
+
+    useEffect(() => {
+        // console.log(reconnectingStatus)
+
+
+    }, [reconnectingStatus])
 
     return (
         <div className='connectionsXnotes'>
@@ -116,17 +171,17 @@ function PreviewXOutput() {
 
                 </div>
                 <div style={{ paddingLeft: "24px", paddingRight: "24px", textAlign: "left", flex: 1, alignItems: 'flex-start', display: "flex", flexDirection: "column", gap: "10px" }}>
-                    {(location.pathname == "/main/bible" && outputLine) && <span style={{ listStyleType: "none", fontSize: '14px', fontWeight: "500", color: "#B1B1B1", cursor: "pointer", textAlign: "left" }} onClick={() => { }}>{selectedVerseArray?.book_name + " " + selectedVerseArray?.chapter_number + ":" + selectedVerseArray?.verse_number} ({selectActiveVersion.toUpperCase()})</span>}
-                    {outputLine  && <span style={{ fontSize: '14px', fontWeight: "600", color: "#B1B1B1", lineHeight: "1.3" }}>{location.pathname == "/main/bible" ? selectedVerseArray?.text : outputLine} </span>}
+                    {(location.pathname == "/main/bible" && outputLine) && <span style={{ listStyleType: "none", fontSize: '14px', fontWeight: "500", color: "#B1B1B1", cursor: "pointer", textAlign: "left" }} onClick={() => { }}>{multipleselectedVerseArray.length > 0 ? getVerseText(multipleselectedVerseArray).ref : selectedVerseArray?.book_name + " " + selectedVerseArray?.chapter_number + ":" + selectedVerseArray?.verse_number + " (" + selectActiveVersion.toUpperCase() + ")"} </span>}
+                    {outputLine && <span style={{ fontSize: '14px', fontWeight: "600", color: "#B1B1B1", lineHeight: "1.3" }}>{location.pathname == "/main/bible" ? (multipleselectedVerseArray.length > 0 ? getVerseText(multipleselectedVerseArray).text : selectedVerseArray?.text) : outputLine} </span>}
                 </div>
                 <div style={{ flex: 1 }}></div>
             </div>
             <div className='finaloutput'>
 
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginLeft: "24px", gap: "5px", minHeight: "30%", marginRight: "24px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginLeft: "24px", gap: "5px", marginRight: "24px", padding: "20px 0px" }}>
                     <div style={{ display: "flex", justifyContent: "flex-start", alignItems: "flex-start", gap: "5px" }}>
                         <span style={{ fontSize: '14px', fontWeight: "600", color: "#FFFFFF" }}>{!outputConnectionEstablished ? "Output(Not Connected)" : "Output (" + capitalize(outputConnectionSoftware) + ")"} </span>
-                        <div style={{ height: "11px", width: "11px", borderRadius: "50%", backgroundColor: !outputConnectionEstablished ? "#FF3939" : "#3EDB57", marginTop: "5px" }}></div>
+                        <div id={(reconnectingStatus && outputConnectionEstablished) && 'blink'} style={{ height: "11px", width: "11px", borderRadius: "50%", backgroundColor: !outputConnectionEstablished ? "#FF3939" : reconnectingStatus ? "yellow" : "#3EDB57", marginTop: "5px" }}></div>
                     </div>
                     {/* {
                         outputConnectionEstablished == 1 &&
@@ -136,29 +191,18 @@ function PreviewXOutput() {
                     } */}
                     {
                         outputConnectionEstablished == 1 &&
-                        <div style={{ cursor: "pointer", width: "10px" }} onClick={handleShowOutputOption}>
+                        <div style={{ cursor: "pointer", width: "10px" }} onClick={handleShowOutputOption} ref={iconRef}>
                             <SlOptionsVertical size={15} color='#B1B1B1' />
 
-                            {showoutputOptions && (
-                                <div ref={outputOptionsRef}>
-                                    <OutputOptionsMenu
-                                        posX={outputOptionsPosition.x}
-                                        posY={outputOptionsPosition.y}
-                                        setshowoutputOptions={setshowoutputOptions}
-                                        setoutputConnectionEstablished={setoutputConnectionEstablished}
-                                        setisLive={setisLive}
 
-                                    />
-                                </div>
-                            )}
                         </div>
                     }
                 </div>
                 {
                     finaloutputLine &&
-                    <div style={{ paddingLeft: "24px", paddingRight: "24px", textAlign: "left", alignItems: "flex-start", display: 'flex', flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-start", gap: "10px" }}>
-                        {(outPutType == 'bible' && finaloutputLine) && <span style={{ listStyleType: "none", fontSize: '14px', fontWeight: "500", color: "#FF3939", textAlign: "left" }} onClick={() => { }}>{selectedVerseArray?.book_name + " " + selectedVerseArray?.chapter_number + ":" + selectedVerseArray?.verse_number} ({selectActiveVersion.toUpperCase()})</span>}
-                        {finaloutputLine  && <span style={{ fontSize: '14px', fontWeight: "600", color: "#FF3939", lineHeight: "1.3" }}>{location.pathname == "/main/bible" ? selectedVerseArray?.text : finaloutputLine} </span>}
+                    <div style={{ paddingLeft: "24px", paddingRight: "24px", textAlign: "left", alignItems: "flex-start", display: 'flex', flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-start", gap: "10px", }}>
+                        {(outPutType == 'bible' && finaloutputLine) && <span style={{ listStyleType: "none", fontSize: '14px', fontWeight: "500", color: "#FF3939", textAlign: "left" }} onClick={() => { }}>{multipleselectedVerseArray.length > 0 ? getVerseText(multipleselectedVerseArray).ref : selectedVerseArray?.book_name + " " + selectedVerseArray?.chapter_number + ":" + selectedVerseArray?.verse_number + " (" + selectActiveVersion.toUpperCase() + ")"} </span>}
+                        {finaloutputLine && <span style={{ fontSize: '14px', fontWeight: "600", color: "#FF3939", lineHeight: "1.3" }}>{location.pathname == "/main/bible" ? multipleselectedVerseArray.length > 0 ? getVerseText(multipleselectedVerseArray).text : selectedVerseArray?.text : finaloutputLine} </span>}
                     </div>
                 }
 
@@ -171,12 +215,28 @@ function PreviewXOutput() {
                         </button>
                     </div>
                 }
+                {showoutputOptions && (
+                    <div ref={outputOptionsRef}>
+                        <OutputOptionsMenu
+                            posX={outputOptionsPosition.x}
+                            posY={outputOptionsPosition.y}
+                            setshowoutputOptions={setshowoutputOptions}
+                            setoutputConnectionEstablished={setoutputConnectionEstablished}
+                            setisLive={setisLive}
+                            showoutputOptions={showoutputOptions}
+                            outputOptionsRef={outputOptionsRef}
+                            setreconnectingStatus={setreconnectingStatus}
+                            iconRef={iconRef}
+
+                        />
+                    </div>
+                )}
             </div>
 
             <div className='externalConnection'>
                 <div style={{ display: "flex", justifyContent: "flex-start", alignItems: "center", marginTop: "20px", marginLeft: "24px", gap: "5px" }}>
                     <span style={{ fontSize: '14px', fontWeight: "600", color: "#FFFFFF" }}>Remote Connection Code</span>
-                    <div style={{ marginTop: "3px", height: "11px", width: "11px", borderRadius: "50%", backgroundColor: externalConnectionConnectionEstablished === 0 ? "transparent" : "#3EDB57" }}></div>
+                    <div id={(generatereconnectingStatus && externalConnectionConnectionEstablished) && 'blink'} style={{ marginTop: "3px", height: "11px", width: "11px", borderRadius: "50%", backgroundColor: externalConnectionConnectionEstablished === 0 ? "transparent" : "#3EDB57" }}></div>
                 </div>
                 {
                     externalConnectionConnectionEstablished === 0 ?
@@ -210,6 +270,7 @@ function PreviewXOutput() {
                     }
                 </div>
             </div>
+            
         </div>
     );
 }

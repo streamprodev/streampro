@@ -36,7 +36,7 @@ function DisplayScripture() {
     return (
         <> 
 
-            <span style={{ fontSize: '18px', fontWeight: "600", color: "#FFFFFF", marginTop: "50px", textAlign: "center", }}>{selectedBook.label + " Chaper " + selectedChapter?.chapter_number} </span>
+            <span style={{ fontSize: '18px', fontWeight: "600", color: "#FFFFFF", marginTop: "50px", textAlign: "center", }}>{selectedBook.label + " Chapter " + selectedChapter?.chapter_number} </span>
             {/* <div style={{ display: "flex", justifyContent: "center", gap: "10px", }}>
                 <div style={{ display: "flex", gap: "5px", alignItems: "center", cursor: "pointer" }} onClick={() => { }} >
                     <ArrowLeft size={24} />

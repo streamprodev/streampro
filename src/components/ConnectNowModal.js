@@ -18,7 +18,7 @@ const ConnectNowModal = () => {
 
 
     const { registrationInfo, firestore } = useRegistrationInfo();
-    const { isConnectNowModalOpen, closeConnectNowModal, outputUrl, setoutputUrl, outputPasscode, setoutputPasscode, outputConnectionSoftware, setoutputConnectionSoftware, outputConnectionEstablished, setoutputConnectionEstablished } = usePreviewXOutput();
+    const { isConnectNowModalOpen, closeConnectNowModal, outputUrl, setoutputUrl, outputPasscode, setoutputPasscode, outputConnectionSoftware, setoutputConnectionSoftware, outputConnectionEstablished, setoutputConnectionEstablished, setisLive } = usePreviewXOutput();
 
     const [page, setPage] = useState(1)
     // const [streamingPlatform, setStreamingPlatform] = useState('')
@@ -46,6 +46,7 @@ const ConnectNowModal = () => {
 
             }, 1500);
         }
+        setisLive(outputConnectionEstablished)
     }, [outputConnectionEstablished]);
 
     const closeModal = () => {

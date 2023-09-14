@@ -74,6 +74,7 @@ export function BibleContextProvider({ children }) {
     const [selectActiveVersionName, setselectActiveVersionName] = useState('King James Version (KJV)')
     const [searchBookTemp, setsearchBookTemp] = useState(books[0].label);
     const [selectedVerseArray, setselectedVerseArray] = useState({});
+    const [multipleselectedVerseArray, setmultipleselectedVerseArray] = useState([]);
     const [activeBookPart1, setactiveBookPart1] = useState([]);
     const [activeBookPart2, setactiveBookPart2] = useState([]);
     const [activeBookPart3, setactiveBookPart3] = useState([]);
@@ -81,16 +82,19 @@ export function BibleContextProvider({ children }) {
     const [activeBookPart5, setactiveBookPart5] = useState([]);
     const [bookmarkedData, setbookmarkedData] = useState([]);
     const [bookmarkopen, setbookmarkOPen] = useState(false);
-    const [showOneLine, setshowOneLine] = useState(true)
-    const [showHilighted, setshowHilighted] = useState(false)
+    const [showOneLine, setshowOneLine] = useState(false)
+    const [showHilighted, setshowHilighted] = useState(true)
+    const [showAllSearch, setshowAllSearch] = useState(true)
     const [expandedView, setexpandedView] = useState(false)
+    const [showBookmarkContext, setshowBookmarkContext] = useState(false)
     const [searchResultRef, setsearchResultRef] = useState(useRef(null))
+    const [selectedLine, setselectedLine] = useState({})
     const { activeId, setactiveId, setactiveLine, activeLine } = useSong()
 
     const bookmarkRef = useRef(null)
     const inputVerseRef = useRef(null);
 
-
+    // console.log(bibleView, 'bibleView')
 
     const location = useLocation();
 
@@ -240,53 +244,165 @@ export function BibleContextProvider({ children }) {
     // }, [searchBookObj, searchChapterObj, searchVerse])
 
     const detectKeyDown = (e) => {
+        // console.log(e)
+        if (e.shiftKey) {
+            if (e.key === "ArrowUp") {
+                e.preventDefault();
 
-        if (e.key === "ArrowUp") {
-            e.preventDefault();
-
-
-            if (activeChapterContent && activeChapterContent.length > 0) {
-                setsearchVerse(prev => {
-                    var nextPos = -1
-                    var done = false
-                    while (!done) {
-                        if (activeChapterContent[parseInt(prev) + nextPos - 1]) {
-                            done = true
-                        } else if ((parseInt(prev) + nextPos - 1) < -1) {
-                            nextPos = 0;
-                            done = true
-                        } else {
-                            nextPos = nextPos - 1
+                if (activeChapterContent && activeChapterContent.length > 0) {
+                    setsearchVerse(prev => {
+                        var nextPos = -1
+                        var done = false
+                        while (!done) {
+                            if (activeChapterContent[parseInt(prev) + nextPos - 1]) {
+                                done = true
+                            } else if ((parseInt(prev) + nextPos - 1) < -1) {
+                                nextPos = 0;
+                                done = true
+                            } else {
+                                nextPos = nextPos - 1
+                            }
                         }
-                    }
-                    // setsearchVerse(parseInt(prev) + nextPos)
-                    setselectedVerseArray(activeChapterContent[parseInt(prev) + nextPos - 1])
-                    return parseInt(prev) + nextPos
-                })
-            }
-        } else if (e.key === "ArrowDown") {
-            e.preventDefault();
-            if (activeChapterContent && activeChapterContent.length > 0) {
-                setsearchVerse(prev => {
-                    var nextPos = 1
-                    var done = false
-                    while (!done) {
-                        if (activeChapterContent[parseInt(prev) + nextPos - 1]) {
-                            done = true
-                        } else if ((parseInt(prev) + nextPos - 1) > activeChapterContent.length) {
-                            nextPos = 0;
-                            done = true
-                        } else {
+                        // setsearchVerse(parseInt(prev) + nextPos)
+                        setmultipleselectedVerseArray(newprev => {
 
-                            nextPos++
+                            // if (newprev.length == 1) {
+                            //     newprev.unshift(activeChapterContent[parseInt(prev) + nextPos - 1]);
+                            // } else 
+                            if (nextPos == 0) {
+                                return newprev;
+                            }
+                            if (newprev.length >= 1) {
+                                let startNumber = parseInt(newprev[0].verse_number)
+                                console.log(parseInt(prev), startNumber)
+                                if (parseInt(prev) > startNumber) {
+                                    newprev.pop()
+                                    // console.log(newprev, 'pop')
+                                } else {
+                                    newprev.unshift(activeChapterContent[parseInt(prev) + nextPos - 1]);
+                                    // console.log(newprev, 'unshift')
+                                }
+                            } else if (newprev.length == 0) {
+                                newprev.unshift(activeChapterContent[parseInt(prev) - 1]);
+                                newprev.unshift(activeChapterContent[parseInt(prev) + nextPos - 1]);
+                            }
+
+
+                            // if (newprev.length == 0) {
+
+                            //     newprev.unshift(activeChapterContent[parseInt(prev) - 1]);
+                            // }
+                            // newprev.unshift(activeChapterContent[parseInt(prev) + nextPos - 1]);
+                            return newprev;
+                        })
+                        setselectedVerseArray(activeChapterContent[parseInt(prev) + nextPos - 1])
+                        return parseInt(prev) + nextPos
+                    })
+                }
+            } else if (e.key === "ArrowDown") {
+                e.preventDefault();
+                if (activeChapterContent && activeChapterContent.length > 0) {
+                    setsearchVerse(prev => {
+                        var nextPos = 1
+                        var done = false
+                        while (!done) {
+                            if (activeChapterContent[parseInt(prev) + nextPos - 1]) {
+                                done = true
+                            } else if ((parseInt(prev) + nextPos - 1) > activeChapterContent.length) {
+                                nextPos = 0;
+                                done = true
+                            } else {
+
+                                nextPos++
+                            }
                         }
-                    }
-                    setselectedVerseArray(activeChapterContent[parseInt(prev) + nextPos - 1])
-                    return parseInt(prev) + nextPos
-                })
+                        setmultipleselectedVerseArray(newprev => {
+
+                            // if(newprev.length == 1){
+                            //     newprev.push(activeChapterContent[parseInt(prev) + nextPos - 1]);
+                            // }else 
+                            if (nextPos == 0) {
+                                return newprev;
+                            }
+                            if (newprev.length >= 1) {
+                                let endNumber = parseInt(newprev[newprev.length - 1].verse_number)
+                                console.log(parseInt(prev), endNumber)
+                                if (parseInt(prev) < endNumber) {
+                                    newprev.shift()
+                                    // console.log(newprev,'shift')
+                                } else {
+                                    newprev.push(activeChapterContent[parseInt(prev) + nextPos - 1]);
+                                    // console.log(newprev, 'push')
+                                }
+                            } else if (newprev.length == 0) {
+                                newprev.push(activeChapterContent[parseInt(prev) - 1]);
+                                newprev.push(activeChapterContent[parseInt(prev) + nextPos - 1]);
+                            }
+
+                            // if (newprev.length == 0) {
+                            //     newprev.push(activeChapterContent[parseInt(prev) - 1]);
+                            // }
+                            // newprev.push(activeChapterContent[parseInt(prev) + nextPos - 1]);
+                            return newprev;
+                        })
+                        setselectedVerseArray(activeChapterContent[parseInt(prev) + nextPos - 1])
+                        return parseInt(prev) + nextPos
+                    })
+                }
             }
-        } else if (e.key === "Escape") {
+        } else {
+            if (e.key === "ArrowUp") {
+                e.preventDefault();
+                setmultipleselectedVerseArray([])
+
+
+                if (activeChapterContent && activeChapterContent.length > 0) {
+                    setsearchVerse(prev => {
+                        var nextPos = -1
+                        var done = false
+                        while (!done) {
+                            if (activeChapterContent[parseInt(prev) + nextPos - 1]) {
+                                done = true
+                            } else if ((parseInt(prev) + nextPos - 1) < -1) {
+                                nextPos = 0;
+                                done = true
+                            } else {
+                                nextPos = nextPos - 1
+                            }
+                        }
+                        // setsearchVerse(parseInt(prev) + nextPos)
+                        setselectedVerseArray(activeChapterContent[parseInt(prev) + nextPos - 1])
+                        return parseInt(prev) + nextPos
+                    })
+                }
+            } else if (e.key === "ArrowDown") {
+                e.preventDefault();
+                setmultipleselectedVerseArray([])
+                if (activeChapterContent && activeChapterContent.length > 0) {
+                    setsearchVerse(prev => {
+                        var nextPos = 1
+                        var done = false
+                        while (!done) {
+                            if (activeChapterContent[parseInt(prev) + nextPos - 1]) {
+                                done = true
+                            } else if ((parseInt(prev) + nextPos - 1) > activeChapterContent.length) {
+                                nextPos = 0;
+                                done = true
+                            } else {
+
+                                nextPos++
+                            }
+                        }
+                        setselectedVerseArray(activeChapterContent[parseInt(prev) + nextPos - 1])
+                        return parseInt(prev) + nextPos
+                    })
+                }
+            }
+        }
+        if (e.key === "Escape") {
             e.preventDefault();
+            setmultipleselectedVerseArray([])
+            setselectedVerseArray({})
             setactiveLine(-1)
         } if (e.key === "b" || e.key === "B") {
             // setactiveLine(-1)
@@ -296,6 +412,17 @@ export function BibleContextProvider({ children }) {
             }
         }
     }
+    useEffect(() => {
+        if (searchTerm.length > 0) {
+            handleKeyPress();
+
+        }
+    }, [showAllSearch])
+
+    useEffect(() => {
+        // console.log(multipleselectedVerseArray)
+    }, [multipleselectedVerseArray])
+
 
     const handleKeyPress = async (event) => {
         if (event) {
@@ -358,7 +485,12 @@ export function BibleContextProvider({ children }) {
 
     function getSearchResult(miniSearchbible) {
         return new Promise(function (resolve, reject) {
-            resolve(miniSearchbible.search(searchTerm).slice(0, 10));
+            if (showAllSearch) {
+                resolve(miniSearchbible.search(searchTerm, { prefix: true, combineWith: "AND" }).slice(0, 10));
+            } else {
+                resolve(miniSearchbible.search(searchTerm).slice(0, 10));
+
+            }
         });
     }
 
@@ -436,7 +568,7 @@ export function BibleContextProvider({ children }) {
 
 
     useEffect(() => {
-        console.log(bookmarkedData)
+        // console.log(bookmarkedData)
 
         if (bookmarkRef.current) {
             bookmarkRef.current.scrollTo({
@@ -448,12 +580,30 @@ export function BibleContextProvider({ children }) {
 
     }, [bookmarkedData])
 
+    const getVerseText = (verses) => {
+        let text = "";
+        let ref = "";
+        let lastVerse = "";
+        if (verses.length > 0) {
+            ref = verses[0].book_name + " " + verses[0].chapter_number + ":" + verses[0].verse_number
+            verses.forEach((verse, index) => {
+                text = text + verse.text + " "
+                if (index > 0) {
+                    lastVerse = "-" + verse.verse_number
+                }
+            });
+
+        }
+        ref = ref + lastVerse + " (" + selectActiveVersion.toUpperCase() + ")"
+        return { text, ref };
+    }
+
 
     const contentChapterRef = useRef(null)
 
 
     return (
-        <BibleContext.Provider value={{ inputType, setinputType, searchBook, setsearchBook, books, chapters, NewTestamentBooks, OldTestamentBooks, bibleView, setbibleView, selectedBook, setselectedBook, selectedChapter, setselectedChapter, activeChapterContent, setactiveChapterContent, setChapterContent, selectActiveVersion, searchChapter, setsearchChapter, searchVerse, setsearchVerse, searchBookObj, setsearchBookObj, searchChapterObj, setsearchChapterObj, searchBookTemp, setsearchBookTemp, showSelectVersionMenu, setshowSelectVersionMenu, showSelectVersionMenuPosition, setshowSelectVersionMenuPosition, setselectActiveVersion, selectActiveVersionName, handleKeyPress, searchTerm, setSearchTerm, searchData, setsearchData, detectKeyDown, selectedVerseArray, setselectedVerseArray, contentChapterRef, bookmarkopen, setbookmarkOPen, bookmarkedData, setbookmarkedData, addBookmark, deleteBookmark, inputBookRef, activeBook, bookmarkRef, inputVerseRef, showOneLine, setshowOneLine, showHilighted, setshowHilighted, expandedView, setexpandedView, searchResultRef, setsearchResultRef }}>
+        <BibleContext.Provider value={{ inputType, setinputType, searchBook, setsearchBook, books, chapters, NewTestamentBooks, OldTestamentBooks, bibleView, setbibleView, selectedBook, setselectedBook, selectedChapter, setselectedChapter, activeChapterContent, setactiveChapterContent, setChapterContent, selectActiveVersion, searchChapter, setsearchChapter, searchVerse, setsearchVerse, searchBookObj, setsearchBookObj, searchChapterObj, setsearchChapterObj, searchBookTemp, setsearchBookTemp, showSelectVersionMenu, setshowSelectVersionMenu, showSelectVersionMenuPosition, setshowSelectVersionMenuPosition, setselectActiveVersion, selectActiveVersionName, handleKeyPress, searchTerm, setSearchTerm, searchData, setsearchData, detectKeyDown, selectedVerseArray, setselectedVerseArray, contentChapterRef, bookmarkopen, setbookmarkOPen, bookmarkedData, setbookmarkedData, addBookmark, deleteBookmark, inputBookRef, activeBook, bookmarkRef, inputVerseRef, showOneLine, setshowOneLine, showHilighted, setshowHilighted, expandedView, setexpandedView, searchResultRef, setsearchResultRef, multipleselectedVerseArray, setmultipleselectedVerseArray, getVerseText, showBookmarkContext, setshowBookmarkContext, selectedLine, setselectedLine, showAllSearch, setshowAllSearch }}>
             {children}
         </BibleContext.Provider>
     )

@@ -27,7 +27,8 @@ export function PreviewXOutputContextProvider({ children }) {
 
 
 
-    const [outputLine, setoutputLine] = useState(null);
+    // const [reconnecting, setreconnectingStatus] = useState(false);
+    const [outputLine, setoutputLine] = useState("");
     const [finaloutputLine, setfinaloutputLine] = useState('');
 
     const [outputUrl, setoutputUrl] = useState('http://127.0.0.1:8088');
@@ -47,11 +48,15 @@ export function PreviewXOutputContextProvider({ children }) {
     const [ngrokStatus, setngrokStatus] = useState({});
     const [ngrokUrlError, setngrokUrlError] = useState('');
 
+    const [reconnectingStatus, setreconnectingStatus] = useState(false)
+    const [generatereconnectingStatus, setgeneratereconnectingStatus] = useState(false)
+
     const location = useLocation();
-    const { selectedBook, setselectedBook, selectedChapter, setselectedChapter, searchVerse, selectedVerseArray, selectActiveVersion } = useBible()
+    const { selectedBook, setselectedBook, selectedChapter, setselectedChapter, searchVerse, selectedVerseArray, selectActiveVersion, multipleselectedVerseArray, setmultipleselectedVerseArray, getVerseText } = useBible()
 
     useEffect(() => {
         ipcRenderer.on('vmixDisconected', vmixDisconected)
+        // ipcRenderer.on('setReconnecting', setReconnecting)
         ipcRenderer.on('setngrokUrlError', setngrokUrlErrorf);
         ipcRenderer.on('setngrokUrl', setngrokUrlf);
         ipcRenderer.on('setngrokStatus', setngrokStatusf);
@@ -63,6 +68,7 @@ export function PreviewXOutputContextProvider({ children }) {
             ipcRenderer.removeListener('setngrokStatus', setngrokStatusf);
             ipcRenderer.removeListener('closeNgrokSession', closeNgrokSessionf);
             ipcRenderer.removeListener('vmixDisconected', vmixDisconected)
+            // ipcRenderer.removeListener('setReconnecting', setReconnecting)
         }
     }, []);
 
@@ -80,6 +86,7 @@ export function PreviewXOutputContextProvider({ children }) {
 
     useEffect(() => {
 
+        // if (outputLine) {
         if (isLive) {
             setfinaloutputLine(outputLine)
         } else if (outputConnectionEstablished) {
@@ -87,8 +94,13 @@ export function PreviewXOutputContextProvider({ children }) {
 
                 setTimeout(() => {
                     // delete selectedVerseArray['ref'];
-                    const clone = Object.assign({}, selectedVerseArray);
+                    let clone = Object.assign({}, selectedVerseArray);
                     delete clone.ref;
+
+                    clone.ref = selectedVerseArray.book_name + " " + selectedVerseArray.chapter_number + ":" + selectedVerseArray.verse_number + " (" + selectActiveVersion.toUpperCase() + ")"
+                    if (multipleselectedVerseArray.length > 0) {
+                        clone = getVerseText(multipleselectedVerseArray)
+                    }
 
 
 
@@ -103,42 +115,39 @@ export function PreviewXOutputContextProvider({ children }) {
             ipcRenderer.invoke('sendToVmix', data).then(res => { }).catch(err => console.log(err))
 
         }
-    }, [outputLine, selectedVerseArray]);
 
-    // useEffect(() => {
-
-    //     if (isLive) {
-    //         setfinaloutputLine(outputLine)
-    //     } else if (outputConnectionEstablished) {
-    //         if (location.pathname == '/main/bible') {
-    //             const data = { outputUrl, outputPasscode, outputLine, selectedBook, selectedChapter, searchVerse, selectedVerseArray }
-
-    //             console.log(outputLine, selectedVerseArray)
-    //             ipcRenderer.invoke('sendToVmixBible', data).then(res => { }).catch(err => { })
-    //             return
-    //         }
-    //         const data = { outputUrl, outputPasscode, outputLine }
-    //         ipcRenderer.invoke('sendToVmix', data).then(res => console.log(res)).catch(err => console.log(err))
-    //     }
-    // }, [outputLine]);
+        // }
+    }, [outputLine, selectedVerseArray, multipleselectedVerseArray]);
 
     useEffect(() => {
-        if (location.pathname == '/main/bible') {
+        // console.log(selectedVerseArray)
+    }, [selectedVerseArray]);
 
-            setTimeout(() => {
-                // delete selectedVerseArray['ref'];
+    useEffect(() => {
+        if (outputConnectionEstablished) {
+            if (location.pathname == '/main/bible') {
 
-                const clone = Object.assign({}, selectedVerseArray);
-                delete clone.ref;
-                const data = { outputUrl, outputPasscode, finaloutputLine, selectedBook, selectedChapter, searchVerse, selectedVerseArray: clone, selectActiveVersion }
-                ipcRenderer.invoke('goLiveWBible', data).then(res => { }).catch(err => { console.log(err) })
+                setTimeout(() => {
+                    // delete selectedVerseArray['ref'];
 
-            }, 0);
-            return
+                    let clone = Object.assign({}, selectedVerseArray);
+                    delete clone.ref;
+                    clone.ref = selectedVerseArray.book_name + " " + selectedVerseArray.chapter_number + ":" + selectedVerseArray.verse_number + " (" + selectActiveVersion.toUpperCase() + ")"
+                    if (multipleselectedVerseArray.length > 0) {
+                        clone = getVerseText(multipleselectedVerseArray)
+                    }
+
+                    const data = { outputUrl, outputPasscode, finaloutputLine, selectedBook, selectedChapter, searchVerse, selectedVerseArray: clone, selectActiveVersion }
+                    ipcRenderer.invoke('goLiveWBible', data).then(res => { }).catch(err => { console.log(err) })
+
+                }, 0);
+                return
+            }
+            const data = { outputUrl, outputPasscode, finaloutputLine }
+            ipcRenderer.invoke('goLiveWSongs', data).then(res => { }).catch(err => { })
+
         }
-        const data = { outputUrl, outputPasscode, finaloutputLine }
-        ipcRenderer.invoke('goLiveWSongs', data).then(res => { }).catch(err => { })
-    }, [finaloutputLine]);
+    }, [finaloutputLine, multipleselectedVerseArray]);
 
     useEffect(() => {
         if (isLive) {
@@ -198,7 +207,20 @@ export function PreviewXOutputContextProvider({ children }) {
     const vmixDisconected = () => {
         setoutputConnectionEstablished(0)
         setisLive(false)
+        setreconnectingStatus(false)
+        toast(<LowerToast status={'error'} message={'Output Disconnected'} />, {
+            position: "bottom-center",
+            autoClose: 2000,
+            hideProgressBar: true,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "light",
+            style: { width: "500px", backgroundColor: "#FF3939", textAlign: "left", height: "10px", margin: "auto", color: "#ffffff" }
+        });
     }
+
 
     const openConnectNowModal = () => {
         setIsConnectNowModalOpen(true);
@@ -227,7 +249,9 @@ export function PreviewXOutputContextProvider({ children }) {
         e.preventDefault();
         // setActiveItem(itemId);
         if (showoutputOptions) {
-            setshowoutputOptions(false);
+            setTimeout(() => {
+                setshowoutputOptions(false);
+            }, 100);
             return
         }
         const clickX = e.clientX;
@@ -294,14 +318,33 @@ export function PreviewXOutputContextProvider({ children }) {
         });
     };
     const closeNgrokSessionf = (event, contents) => {
+        console.log('fff')
         setngrokUrlError(contents)
+        reset()
+        setexternalConnectionPasscode('')
+        setexternalConnectionUrl('')
+        closeGenerateURLModal()
+        // pause()
+        ipcRenderer.send('closengrok', 'Session closed successfully')
+        setexternalConnectionConnectionEstablished(0)
+        toast(<LowerToast status={'error'} message={contents} />, {
+            position: "bottom-center",
+            autoClose: 2000,
+            hideProgressBar: true,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "light",
+            style: { width: "500px", backgroundColor: "#FF3939", textAlign: "left", height: "10px", margin: "auto" }
+        });
         // console.log(contents)
     };
     const setngrokStatusf = (event, contents) => {
         setngrokStatus(contents);
         toast(<LowerToast status={'error'} message={contents} />, {
             position: "bottom-center",
-            autoClose: 300,
+            autoClose: 1000,
             hideProgressBar: true,
             closeOnClick: true,
             pauseOnHover: true,
@@ -321,7 +364,7 @@ export function PreviewXOutputContextProvider({ children }) {
 
     return (
         <PreviewXOutputContext.Provider value={{
-            ngrokUrlError, setngrokUrlError, ngrokStatus, setngrokStatus, outputOptionsPosition, setoutputOptionsPosition, showoutputOptions, setshowoutputOptions, isLive, setisLive, externalConnectionConnectionEstablished, setexternalConnectionConnectionEstablished, externalConnectionPasscode, setexternalConnectionPasscode, externalConnectionUrl, setexternalConnectionUrl, outputConnectionEstablished, setoutputConnectionEstablished, outputConnectionSoftware, setoutputConnectionSoftware, outputPasscode, setoutputPasscode, outputUrl, setoutputUrl, finaloutputLine, setfinaloutputLine, outputLine, setoutputLine, seconds, minutes, hours, days, isRunning, start, pause, reset, copiedToaster, vmixDisconected, isConnectNowModalOpen, setIsConnectNowModalOpen, isGenerateURLModalOpen, setisGenerateURLModalOpen, outputOptionsRef, handleShowOutputOption, closeConnectNowModal, closeGenerateURLModal
+            ngrokUrlError, setngrokUrlError, ngrokStatus, setngrokStatus, outputOptionsPosition, setoutputOptionsPosition, showoutputOptions, setshowoutputOptions, isLive, setisLive, externalConnectionConnectionEstablished, setexternalConnectionConnectionEstablished, externalConnectionPasscode, setexternalConnectionPasscode, externalConnectionUrl, setexternalConnectionUrl, outputConnectionEstablished, setoutputConnectionEstablished, outputConnectionSoftware, setoutputConnectionSoftware, outputPasscode, setoutputPasscode, outputUrl, setoutputUrl, finaloutputLine, setfinaloutputLine, outputLine, setoutputLine, seconds, minutes, hours, days, isRunning, start, pause, reset, copiedToaster, vmixDisconected, isConnectNowModalOpen, setIsConnectNowModalOpen, isGenerateURLModalOpen, setisGenerateURLModalOpen, outputOptionsRef, handleShowOutputOption, closeConnectNowModal, closeGenerateURLModal, reconnectingStatus, setreconnectingStatus, generatereconnectingStatus, setgeneratereconnectingStatus
         }}>
             {children}
         </PreviewXOutputContext.Provider>

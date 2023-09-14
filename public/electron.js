@@ -21,7 +21,8 @@ const { parseString } = require("xml2js");
 
 const { machineId, machineIdSync } = require("node-machine-id");
 const { initializeApp } = require("firebase/app");
-const { getFirestore, getCountFromServer, collection, getDocs, query, where, setDoc, doc } = require("@firebase/firestore")
+const { getFirestore, getCountFromServer, collection, getDocs, query, where, setDoc, doc } = require("@firebase/firestore");
+const { electron } = require('process');
 
 // const { firestore: firedb } = require("../src/firebase_setup/firebase.js")
 // var ping = require('ping');
@@ -38,6 +39,10 @@ let songKey
 
 const port = 8088;                  //Save the port number where your server will be listening
 var session = '';
+var reconnecting = '';
+var generatereconnecting = '';
+var intervalId = '';
+var intervalIdGenerate = '';
 var password = '';
 var auth_token = '2S8k5VeomU47NgyTXJHoJfuHW5i_4J7x3iWftMy77LUzoDMtd'; //eniolorund
 var bearer_token = '2S8k9KqD12kvPVeT5CxUacNymrv_7TXuGa24NwpgxuiyAmLd6';//api key
@@ -118,6 +123,135 @@ ipcMain.handle('readFile', async (event, filePath) => {
         return null; // or handle the error in an appropriate way
     }
 });
+
+const updateReconnectingStatus = (event, status) => {
+
+    // console.log(event)
+    reconnecting = status
+    event.sender.send('setReconnecting', status);
+}
+const updateGenerateReconnectingStatus = (event, status) => {
+
+    console.log(generatereconnecting, 'generatereconnecting')
+    generatereconnecting = status
+    event.sender.send('setGenerateReconnecting', status);
+}
+
+const checkIfConnectedToVmix = async (event, filePath) => {
+
+    intervalId = setInterval(async () => {
+        var myHeaders = new Headers();
+        const base_64 = btoa(filePath.outputPasscode + "STP" + ":" + filePath.outputPasscode + "STP")
+        myHeaders.append("Authorization", "Basic " + base_64);
+        var requestOptions = {
+            method: 'GET',
+            redirect: 'follow',
+            headers: myHeaders,
+            mode: "no-cors",
+        };
+        try {
+            const response = await fetch(filePath.outputUrl + "/api", requestOptions);
+            if (!response.ok) {
+                console.log("not connected")
+                if (!reconnecting) {
+                    updateReconnectingStatus(event, true)
+                    stopIntervalRun(event)
+                }
+            } else {
+                console.log("connected")
+                updateReconnectingStatus(event, false)
+            }
+
+        } catch (error) {
+            console.log("not connected")
+            if (!reconnecting) {
+                updateReconnectingStatus(event, true)
+                stopIntervalRun(event)
+            }
+        }
+
+
+    }, 5000);
+
+}
+
+const stopIntervalRun = (event) => {
+    setTimeout(() => {
+        if (reconnecting) {
+            console.log('disconnected')
+            reconnecting = false;
+            clearInterval(intervalId)
+            event.sender.send('vmixDisconected', 'add');
+            bibleKey = ''
+            songKey = ''
+            // intervalId=''vmixDisconected
+        }
+    }, 60000);
+    // stopOutputConnectionCheck
+
+}
+
+ipcMain.on('stopOutputConnectionCheck', (event, record) => {
+    // console.log(intervalId)
+    clearInterval(intervalId)
+
+});
+const checkIfGeneratedLinkActiv = async (event, filePath) => {
+    console.log(filePath)
+    intervalIdGenerate = setInterval(async () => {
+        var myHeaders = new Headers();
+        const base_64 = btoa(filePath.outputPasscode + "STP" + ":" + filePath.outputPasscode + "STP")
+        myHeaders.append("Authorization", "Basic " + base_64);
+        var requestOptions = {
+            method: 'GET',
+            redirect: 'follow',
+            headers: myHeaders,
+            mode: "no-cors",
+        };
+        try {
+            const response = await fetch(filePath.outputUrl, requestOptions);
+            if (!response.ok) {
+                console.log("not connected")
+                if (!generatereconnecting) {
+                    console.log(event)
+                    updateGenerateReconnectingStatus(event, true)
+                    stopGeneratedLinkIntervalRun(event)
+                }
+            } else {
+                console.log("connected")
+                updateGenerateReconnectingStatus(event, false)
+            }
+
+        } catch (error) {
+            console.log("not connected")
+            if (!generatereconnecting) {
+                updateGenerateReconnectingStatus(event, true)
+                stopGeneratedLinkIntervalRun(event)
+            }
+        }
+    }, 5000);
+
+}
+
+const stopGeneratedLinkIntervalRun = (event) => {
+    setTimeout(() => {
+        if (generatereconnecting) {
+            console.log('disconnected')
+            generatereconnecting = false;
+            clearInterval(intervalIdGenerate)
+            event.sender.send('vmixDisconected2', 'add');
+            closeNgrokSession(event, 'Session closed successfuly')
+        }
+    }, 60000);
+    // stopOutputConnectionCheck
+
+}
+
+ipcMain.on('stopGeneratedLinkConnectionCheck', (event, record) => {
+    clearInterval(intervalIdGenerate)
+
+});
+
 ipcMain.handle('connectVmix', async (event, filePath) => {
     var myHeaders = new Headers();
     const base_64 = btoa(filePath.outputPasscode + "STP" + ":" + filePath.outputPasscode + "STP")
@@ -132,8 +266,13 @@ ipcMain.handle('connectVmix', async (event, filePath) => {
 
     if (!response.ok) {
         const message = `An error has occured: ${response.status}`;
+
+        if (!reconnecting) {
+            //updateReconnectingStatus(event, true)
+        }
         throw new Error(message);
     }
+    checkIfConnectedToVmix(event, filePath)
     const data = await response.text();
     // console.log(data)
     // parseString(data, function (err, results) {
@@ -142,12 +281,6 @@ ipcMain.handle('connectVmix', async (event, filePath) => {
     //     const songKeyObj = results.vmix.inputs[0].input.find(({ _ }) => _ === "Lyrics")
     //     songKey = songKeyObj.$.key
     // });
-
-
-
-    var host2 = [filePath.outputUrl];
-
-    var frequency = 1000; //1 second
 
     return data;
 
@@ -166,13 +299,19 @@ ipcMain.handle('goLiveWSongs', async (event, filePath) => {
             mode: "no-cors",
         };
         //set text
-        const setTextResponse = await fetch(filePath.outputUrl + "/api?Function=SetText&Input=Lyrics&Value=" + filePath.finaloutputLine, requestOptions);
+        let text = filePath.finaloutputLine || "";
+        const setTextResponse = await fetch(filePath.outputUrl + "/api?Function=SetText&Input=Lyrics&Value=" + text, requestOptions);
         if (!setTextResponse.ok) {
-            event.reply('vmixDisconected', 'add');
+            // event.reply('vmixDisconected', 'add');
             //throw disconnected event
             const message = `An error has occured: ${setTextResponse.status}`;
+
+            if (!reconnecting) {
+                //updateReconnectingStatus(event, true)
+            }
             throw new Error(message);
         }
+        //updateReconnectingStatus(event, false)
 
         // const overLayResponse = await fetch(filePath.outputUrl + "/api?Function=OverlayInput1In&Input=Lyrics", requestOptions);
         // if (!overLayResponse.ok) {
@@ -184,10 +323,14 @@ ipcMain.handle('goLiveWSongs', async (event, filePath) => {
         // return await overLayResponse.text();
     } catch (error) {
 
+        if (!reconnecting) {
+            //updateReconnectingStatus(event, true)
+        }
+
     }
 });
 ipcMain.handle('goLiveWBible', async (event, filePath) => {
-   
+
     try {
 
         var myHeaders = new Headers();
@@ -211,12 +354,12 @@ ipcMain.handle('goLiveWBible', async (event, filePath) => {
             });
         }
 
-
+        // console.log(filePath.selectedVerseArray)
         myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
 
         var details = {
-            'txtMessage': filePath.selectedVerseArray.text,
-            'txtTitle': filePath.selectedVerseArray.book_name + " " + filePath.selectedVerseArray.chapter_number + ":" + filePath.selectedVerseArray.verse_number + "(" + filePath.selectActiveVersion.toUpperCase() + ")",
+            'txtMessage': filePath.selectedVerseArray?.text ? filePath.selectedVerseArray?.text : "",
+            'txtTitle': filePath.selectedVerseArray?.text ? filePath?.selectedVerseArray?.ref : "",
             'Update': 'Update'
         };
         var formBody = [];
@@ -234,8 +377,14 @@ ipcMain.handle('goLiveWBible', async (event, filePath) => {
             body: formBody
         };
 
-        
+
         const setTextandTitleResponse = await fetch(filePath.outputUrl + "/titles/?key=" + bibleKey, postrequestOptions)
+        if (!setTextandTitleResponse.ok) {
+            if (!reconnecting) {
+                //updateReconnectingStatus(event, true)
+            }
+        }
+        //updateReconnectingStatus(event, false)
         const data = await setTextandTitleResponse.text();
         // console.log(data)
 
@@ -274,6 +423,9 @@ ipcMain.handle('goLiveWBible', async (event, filePath) => {
         // // console.log(overLayResponsed)
         // return overLayResponsed;
     } catch (error) {
+        if (!reconnecting) {
+            //updateReconnectingStatus(event, true)
+        }
         throw error
     }
 });
@@ -291,11 +443,16 @@ ipcMain.handle('sendToVmix', async (event, filePath) => {
     //set text
     const setTextResponse = await fetch(filePath.outputUrl + "/api?Function=SetText&Input=Lyrics&Value=" + filePath.outputLine, requestOptions);
     if (!setTextResponse.ok) {
-        event.reply('vmixDisconected', 'add');
+        // event.reply('vmixDisconected', 'add');
         //throw disconnected event
         const message = `An error has occured: ${setTextResponse.status}`;
+
+        if (!reconnecting) {
+            //updateReconnectingStatus(event, true)
+        }
         throw new Error(message);
     }
+    //updateReconnectingStatus(event, false)
     return await setTextResponse.text();
 });
 
@@ -328,7 +485,7 @@ ipcMain.handle('sendToVmixBible', async (event, filePath) => {
 
     var details = {
         'txtMessage': filePath.selectedVerseArray.text,
-        'txtTitle': filePath.selectedVerseArray.book_name + " " + filePath.selectedVerseArray.chapter_number + ":" + filePath.selectedVerseArray.verse_number + "(" + filePath.selectActiveVersion.toUpperCase()+")",
+        'txtTitle': filePath.selectedVerseArray.ref,
         'Update': 'Update'
     };
     var formBody = [];
@@ -347,6 +504,12 @@ ipcMain.handle('sendToVmixBible', async (event, filePath) => {
     };
 
     const setTextandTitleResponse = await fetch(filePath.outputUrl + "/titles/?key=" + bibleKey, postrequestOptions)
+    if (!setTextandTitleResponse.ok) {
+        if (!reconnecting) {
+            //updateReconnectingStatus(event, true)
+        }
+    }
+    //updateReconnectingStatus(event, false)
     const data = await setTextandTitleResponse.text();
 
 
@@ -389,6 +552,7 @@ ipcMain.handle('sendToVmixBible', async (event, filePath) => {
 
 
 ipcMain.handle('goOfflineWSongs', async (event, filePath) => {
+    //updateReconnectingStatus(event, false)
     try {
         var myHeaders = new Headers();
         const base_64 = btoa(filePath.outputPasscode + "STP" + ":" + filePath.outputPasscode + "STP")
@@ -407,6 +571,8 @@ ipcMain.handle('goOfflineWSongs', async (event, filePath) => {
             const message = `An error has occured: ${overLayResponse.status}`;
             throw new Error(message);
         }
+        bibleKey = ''
+        songKey = ''
         return await overLayResponse.text();
 
     } catch (error) {
@@ -969,6 +1135,7 @@ ipcMain.on('setngrok', async (event, registration_info) => {
                 tunnel.forwardTcp('127.0.0.1:' + port)
                 console.log("tunnel established at:", url);
                 event.reply('setngrokUrl', { url, password, registration_info });
+                checkIfGeneratedLinkActiv(event, { outputUrl: url, outputPasscode: password })
             } else {
                 console.log('Session does not exist locally, so asking for already existing session to close');
 
@@ -987,7 +1154,7 @@ ipcMain.on('setngrok', async (event, registration_info) => {
                 password = generateRandom()
                 setTimeout(async () => {
                     session = await new ngrok.NgrokSessionBuilder().authtoken(auth_token).handleStopCommand(() => {
-                        closeNgrokSession(event, 'session setup error: received request to stop session')
+                        closeNgrokSession(event, 'Received request to stop session')
                         console.log('received request to stop session')
                         console.log('session closed')
                     })
@@ -997,8 +1164,9 @@ ipcMain.on('setngrok', async (event, registration_info) => {
                     tunnel.forwardTcp('127.0.0.1:' + port)
                     console.log("tunnel established at:", url);
                     event.reply('setngrokUrl', { url, password, registration_info });
+                    checkIfGeneratedLinkActiv(event, { outputUrl: url, outputPasscode: password })
 
-                }, 10000);
+                }, 20000);
 
 
             }
@@ -1007,7 +1175,7 @@ ipcMain.on('setngrok', async (event, registration_info) => {
             //create session and tunnel
             password = generateRandom()
             session = await new ngrok.NgrokSessionBuilder().authtoken(auth_token).handleStopCommand(() => {
-                closeNgrokSession(event, 'session setup error: received request to stop session')
+                closeNgrokSession(event, 'Received request to stop session')
                 // event.reply('setngrokUrlError', 'session setup error: received request to stop session');
                 console.log('received request to stop session')
                 // session.close();
@@ -1019,6 +1187,8 @@ ipcMain.on('setngrok', async (event, registration_info) => {
             tunnel.forwardTcp('127.0.0.1:' + port)
             console.log("tunnel established at:", url);
             event.reply('setngrokUrl', { url, password, registration_info });
+            checkIfGeneratedLinkActiv(event, { outputUrl: url, outputPasscode: password })
+
         }
 
     } catch (error) {

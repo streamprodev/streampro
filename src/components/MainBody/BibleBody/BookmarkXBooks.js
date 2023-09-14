@@ -42,7 +42,7 @@ function BookmarkXBooks() {
 
     const { activeId, setactiveId, setBody, setTitle, activeSongArray, menuEditId, setmenuEditId, setactiveLine, activeLine, displayData, openModal, setisDeleteModalOpen, deleteSong, setdeleteSong } = useSong()
 
-    const { inputType, setinputType, searchBook, setsearchBook, books, chapters, NewTestamentBooks, OldTestamentBooks, searchChapter, setsearchChapter, searchVerse, setsearchVerse, searchBookObj, setsearchBookObj, searchChapterObj, setsearchChapterObj, searchBookTemp, setsearchBookTemp, showSelectVersionMenu, setshowSelectVersionMenu, setshowSelectVersionMenuPosition, selectActiveVersionName, handleKeyPress, searchTerm, setSearchTerm, contentChapterRef, detectKeyDown, bookmarkopen, setbookmarkOPen, deleteBookmark, addBookmark, bookmarkedData, setbookmarkedData, setsearchData, inputBookRef, setselectedVerseArray, activeBook, bookmarkRef, inputVerseRef, searchResultRef, setsearchResultRef } = useBible()
+    const { inputType, setinputType, searchBook, setsearchBook, books, chapters, NewTestamentBooks, OldTestamentBooks, searchChapter, setsearchChapter, searchVerse, setsearchVerse, searchBookObj, setsearchBookObj, searchChapterObj, setsearchChapterObj, searchBookTemp, setsearchBookTemp, showSelectVersionMenu, setshowSelectVersionMenu, setshowSelectVersionMenuPosition, selectActiveVersionName, handleKeyPress, searchTerm, setSearchTerm, contentChapterRef, detectKeyDown, bookmarkopen, setbookmarkOPen, deleteBookmark, addBookmark, bookmarkedData, setbookmarkedData, setsearchData, inputBookRef, setselectedVerseArray, activeBook, bookmarkRef, inputVerseRef, searchResultRef, setsearchResultRef, multipleselectedVerseArray, setmultipleselectedVerseArray } = useBible()
 
     // const [searchBookTemp, setsearchBookTemp] = useState(searchBookObj.label);
     const [searchChapterTemp, setsearchChapterTemp] = useState();
@@ -129,7 +129,10 @@ function BookmarkXBooks() {
             } else {
                 inputVerseElement.style.width = `${7.7}px`;
             }
+
+
         }
+
     }, [searchVerse]);
 
     useEffect(() => {
@@ -163,6 +166,7 @@ function BookmarkXBooks() {
     const handleInputBookChange = (event) => {
         const inputElement = inputBookRef.current;
         if (inputElement) {
+
             // inputElement.style.width = 'auto';
             // inputElement.style.width = `${inputElement.value.length*7.7 ?? 10}px`;
         }
@@ -182,7 +186,7 @@ function BookmarkXBooks() {
                 setspaceCount(0)
 
                 contentChapterRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-                
+
             }
         } else {
             setspaceCount(0)
@@ -201,6 +205,7 @@ function BookmarkXBooks() {
         if (inputElement && document.activeElement === inputElement) {
             if (inputElement.value < 0 || !inputElement.value) {
                 setsearchChapter(1)
+                // setselectedVerseArray(activeBook.find(({ book_number, chapter_number, verse_number }) => verse_number == 1 && chapter_number === 1 && book_number == searchBookObj.book_number))
                 setTimeout(() => {
                     inputElement.select();
                 }, 50);
@@ -211,10 +216,13 @@ function BookmarkXBooks() {
             }
             else {
                 setsearchChapter(inputElement.value)
+                // setselectedVerseArray(activeBook.find(({ book_number, chapter_number, verse_number }) => verse_number == 1 && chapter_number === inputElement.value && book_number == searchBookObj.book_number))
                 inputElement.style.width = 'auto';
                 inputElement.style.width = `${inputElement.value.length * 7.7 ?? 7.7}px`;
             }
-            setsearchVerse(1)
+            // setsearchVerse(1)
+            // setactiveLine(-1)
+
         } else {
             inputElement.style.width = 'auto';
             if (inputElement.value.length) {
@@ -229,6 +237,8 @@ function BookmarkXBooks() {
         if (inputElement && document.activeElement === inputElement) {
             if (inputElement.value < 0 || !inputElement.value) {
                 setsearchVerse(1)
+
+                // setselectedVerseArray(activeBook.find(({ book_number, chapter_number, verse_number }) => verse_number == 1 && chapter_number === searchChapter && book_number == searchBookObj.book_number))
                 setTimeout(() => {
                     inputElement.select();
                 }, 200);
@@ -239,13 +249,15 @@ function BookmarkXBooks() {
             }
             else {
                 setsearchVerse(inputElement.value)
+                console.log(inputElement.value, searchChapter, searchBookObj.book_number)
+                console.log(activeBook.find(({ book_number, chapter_number, verse_number }) => verse_number == inputElement.value && chapter_number == searchChapter && book_number == searchBookObj.book_number), inputElement.value, searchChapter, searchBookObj)
+                setselectedVerseArray(activeBook.find(({ book_number, chapter_number, verse_number }) => verse_number == inputElement.value && chapter_number == parseInt(searchChapter) && book_number == searchBookObj.book_number))
                 inputElement.style.width = 'auto';
                 inputElement.style.width = `${inputElement.value.length * 7.7 ?? 7.7}px`;
-                setselectedVerseArray(activeBook.find(({ book_number, chapter_number, verse_number }) => verse_number == inputElement.value && chapter_number === searchChapterObj.chapter_number && book_number == searchBookObj.book_number))
             }
 
         } else {
-            console.log(inputElement.value)
+            // console.log(inputElement.value)
             inputElement.style.width = 'auto';
             if (inputElement.value.length) {
                 inputElement.style.width = `${inputElement.value.length * 7.7 ?? 7.7}px`;
@@ -253,6 +265,23 @@ function BookmarkXBooks() {
                 inputElement.style.width = `${7.7}px`;
             }
         }
+
+    };
+    const handleInputVerseKeyDown = (event) => {
+        // console.log(event)
+        if (!event.shiftKey) {
+            setmultipleselectedVerseArray([])
+        } else {
+            const inputElement = inputVerseRef.current;
+            if (inputElement) {
+                if (inputElement.value == event.key) {
+                    setselectedVerseArray(activeBook.find(({ book_number, chapter_number, verse_number }) => verse_number == event.key && chapter_number == searchChapter && book_number == searchBookObj.book_number))
+
+                }
+            }
+
+        }
+
 
     };
 
@@ -346,15 +375,25 @@ function BookmarkXBooks() {
                                 <div style={{ display: "flex", justifyContent: "center", cursor: "pointer" }}>
 
                                     {/* <p style={{ fontWeight: "600", color: "#FFFFFF", fontSize: "14px", }}>Book:</p> */}
-                                    <div style={{}}>
+                                    <div style={{}} onClick={() => {
+                                        const inputElement = inputBookRef.current;
+                                        if (inputElement) {
+                                            setTimeout(() => {
+                                                inputElement.select();
+
+                                            }, 100);
+                                        }
+                                    }}>
                                         <Hint options={books} allowTabFill className="hint-body"
                                             onFill={value => {
                                                 const inputElement = inputChapterRef.current;
                                                 setsearchBookObj(value)
+                                                // setselectedVerseArray(activeBook.find(({ book_number, chapter_number, verse_number }) => verse_number == 1 && chapter_number == 1 && book_number == value.book_number))
                                                 setspaceCount(0)
                                                 setTimeout(() => {
                                                     inputElement.select();
                                                 }, 70);
+                                                // setactiveLine(-1)
                                                 // inputElement.select()
                                             }}
                                             onHint={value => {
@@ -365,6 +404,8 @@ function BookmarkXBooks() {
                                                     inputElement.style.width = getTextWidth(value.label);
                                                     // inputElement.style.width = `${value.label.length * 7}px`;
                                                     setsearchBookObj(value)
+                                                    // console.log(value.book_number)
+                                                    // setselectedVerseArray(activeBook.find(({ book_number, chapter_number, verse_number }) => verse_number == 1 && chapter_number == 1 && book_number == value.book_number))
                                                     setsearchBookTemp(value.label)
                                                     if (inputElement.value) {
                                                         setsearchBook(capitalize(inputElement.value))
@@ -372,6 +413,7 @@ function BookmarkXBooks() {
                                                         setsearchBook(value.label.charAt(0).toUpperCase())
                                                     }
                                                     setsearchChapter(1)
+                                                    // setactiveLine(-1)
                                                     // setTimeout(() => {
                                                     //     setsearchVerse(1)
                                                     // }, 10);
@@ -379,6 +421,7 @@ function BookmarkXBooks() {
 
                                                     setsearchBook(searchBookTemp)
                                                     setsearchChapter(1)
+                                                    // setactiveLine(-1)
                                                     setTimeout(() => {
                                                         inputElement.select();
                                                     }, 50);
@@ -414,6 +457,7 @@ function BookmarkXBooks() {
                                                 inputElement.style.width = 'auto';
                                                 inputElement.style.width = getTextWidth(searchBookTemp);
                                                 setsearchChapter(1)
+                                                // setactiveLine(-1)
                                                 setTimeout(() => {
                                                     // setsearchVerse(1)
                                                 }, 10);
@@ -425,7 +469,14 @@ function BookmarkXBooks() {
                                                 // contentChapterRef.current.scrollTo({ top: 0, behavior: 'smooth' });
                                                 // contentChapterRef.current.scrollTo({ top: 0, behavior: 'smooth' });
                                                 // inputElement.style.width = `${searchBookTemp.length * 7}px`;
-                                            }} onFocus={(e) => e.target.select()} onKeyDown={handleInputBookChange} />
+                                            }} onFocus={(e) => e.target.select()} onKeyDown={handleInputBookChange} onClick={(e) => {
+                                                const inputElement = inputBookRef.current;
+                                                if (inputElement) {
+                                                    setTimeout(() => {
+                                                        inputElement.select();
+                                                    }, 100);
+                                                }
+                                            }} />
                                         </Hint>
 
                                     </div>
@@ -436,7 +487,16 @@ function BookmarkXBooks() {
 
                                     {/* <p style={{ fontWeight: "600", color: "#FFFFFF", fontSize: "14px", }}>Chapter:</p> */}
                                     <div style={{ display: "flex", justifyContent: "center", alignSelf: "center" }}>
-                                        <StyledBibleInput type="number" ref={inputChapterRef} onChange={handleInputChapterChange} value={searchChapter} onFocus={(e) => e.target.select()} onKeyDown={handleInputChapterKeyDown} />
+                                        <StyledBibleInput type="number" ref={inputChapterRef} onChange={handleInputChapterChange} value={searchChapter} onFocus={(e) => e.target.select()} onKeyDown={handleInputChapterKeyDown}
+                                            onClick={(e) => {
+                                                const inputElement = inputChapterRef.current;
+                                                if (inputElement) {
+                                                    setTimeout(() => {
+                                                        inputElement.select();
+                                                    }, 100);
+                                                }
+                                            }}
+                                        />
                                     </div>
 
                                 </div>
@@ -444,7 +504,20 @@ function BookmarkXBooks() {
                                 <div style={{ display: "flex", justifyContent: "center", cursor: "pointer", paddingTop: "4px" }}>
 
                                     {/* <p style={{ fontWeight: "600", color: "#FFFFFF", fontSize: "14px", }}>Verse:</p> */}
-                                    <StyledBibleInputVerse type="number" ref={inputVerseRef} onChange={handleInputVerseChange} value={searchVerse} onFocus={(e) => e.target.select()} />
+                                    <StyledBibleInputVerse type="number" ref={inputVerseRef} onChange={handleInputVerseChange} value={searchVerse} onFocus={(e) => {
+                                        setTimeout(() => {
+                                            e.target.select();
+                                        }, 30)
+                                    }} onKeyDown={handleInputVerseKeyDown}
+                                        onClick={(e) => {
+                                            const inputElement = inputVerseRef.current;
+                                            if (inputElement) {
+                                                setTimeout(() => {
+                                                    inputElement.select();
+                                                }, 100);
+                                            }
+                                        }}
+                                    />
 
                                 </div>
                             </div>

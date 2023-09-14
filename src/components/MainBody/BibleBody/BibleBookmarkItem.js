@@ -57,7 +57,7 @@ const BibleBookmarkItem = ({ verse }) => {
     };
 
     return (
-        <div className="SongListItem" style={{ display: "flex", justifyContent: "space-between", flexDirection: "row", alignItems: "center", width: "100%", textAlign: "left", }}>
+        <div className="SongListItem" style={{ display: "flex", justifyContent: "space-between", flexDirection: "row", alignItems: "center", width: "100%", textAlign: "left",marginBottom:"5px" }}>
             <p style={{ listStyleType: "none", fontSize: '14px', fontWeight: "600", color: selectedVerseArray.id == verse.id ? "rgb(255, 57, 57)" : "#B1B1B1", cursor: "pointer", lineHeight: "1.5px" }} onClick={() => {
                 handleSearchToScripture()
             }}>{verse.book_name + " " + verse.chapter_number + ":" + verse.verse_number}</p>
