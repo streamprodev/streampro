@@ -13,6 +13,8 @@ import { useSong } from './SongContext';
 import { useLocation } from 'react-router-dom';
 const { books } = require("../bibles/books")
 const { Kjv } = require("../bibles/Kjv")
+const { Niv } = require("../bibles/Niv")
+const { Amp } = require("../bibles/Amp")
 const { chapters } = require("../bibles/chapters")
 // const {books} = require("../bibles/books")
 const { Nkjv } = require("../bibles/Nkjv")
@@ -126,9 +128,18 @@ export function BibleContextProvider({ children }) {
         if (selectActiveVersion == 'kjv') {
             setactiveBook(Kjv)
             setactiveBookTemp(Kjv)
-        } else if (selectActiveVersion == 'nkjv') {
+        }
+         else if (selectActiveVersion == 'nkjv') {
             setactiveBook(Nkjv)
             setactiveBookTemp(Nkjv)
+        }
+         else if (selectActiveVersion == 'niv') {
+            setactiveBook(Niv)
+            setactiveBookTemp(Niv)
+        }
+         else if (selectActiveVersion == 'amp') {
+            setactiveBook(Amp)
+            setactiveBookTemp(Amp)
         }
 
     }, [selectActiveVersion])

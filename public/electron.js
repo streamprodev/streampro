@@ -23,6 +23,7 @@ const { machineId, machineIdSync } = require("node-machine-id");
 const { initializeApp } = require("firebase/app");
 const { getFirestore, getCountFromServer, collection, getDocs, query, where, setDoc, doc } = require("@firebase/firestore");
 const { electron } = require('process');
+const { autoUpdater, AppUpdater } = require("electron-updater");
 
 // const { firestore: firedb } = require("../src/firebase_setup/firebase.js")
 // var ping = require('ping');
@@ -51,6 +52,9 @@ var bearer_token = '2S8k9KqD12kvPVeT5CxUacNymrv_7TXuGa24NwpgxuiyAmLd6';//api key
 // var auth_token = '1bXHu9TS8UqouHW9z35ttCKL8VC_6saRQWiViaJDisjavzT5Q';
 // var bearer_token = '2RxyddNquVUsbclmKkrN9POK9j1_Joh8LMatgfKscCoQNmnq';//api key
 var session_id;
+
+autoUpdater.autoDownload = false;
+autoUpdater.autoInstallOnAppQuit = true;
 
 //handlers
 ipcMain.handle('getSongData', async () => {
@@ -331,6 +335,7 @@ ipcMain.handle('goLiveWSongs', async (event, filePath) => {
 });
 ipcMain.handle('goLiveWBible', async (event, filePath) => {
 
+    console.log(filePath)
     try {
 
         var myHeaders = new Headers();
@@ -1294,9 +1299,29 @@ async function createWindow() {
 
 app.whenReady().then(async () => {
     createWindow();
+    autoUpdater.checkForUpdates();
     // setTimeout(function () {
     //     win.show();
     // }, 5000);
+});
+
+autoUpdater.on("update-available", (info) => {
+    curWindow.showMessage(`Update available. Current version ${app.getVersion()}`);
+    let pth = autoUpdater.downloadUpdate();
+    curWindow.showMessage(pth);
+});
+
+autoUpdater.on("update-not-available", (info) => {
+    curWindow.showMessage(`No update available. Current version ${app.getVersion()}`);
+});
+
+/*Download Completion Message*/
+autoUpdater.on("update-downloaded", (info) => {
+    curWindow.showMessage(`Update downloaded. Current version ${app.getVersion()}`);
+});
+
+autoUpdater.on("error", (info) => {
+    curWindow.showMessage(info);
 });
 
 
