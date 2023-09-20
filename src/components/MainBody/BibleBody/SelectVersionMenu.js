@@ -78,19 +78,13 @@ const SelectVersionMenu = () => {
                         <span style={{ fontWeight: "600", color: "#FFFFFF", fontSize: "14px", }}>New International Version (NIV)</span>
                     </div>
                 </div>
-                    <div className='' style={{ width: "100%", alignItems: "center", textAlign: "left", fontSize: "14px", display: "flex", flexDirection: "row", justifyContent: "space-between", }} onClick={() => { setselectActiveVersion('amp'); setshowSelectVersionMenu(false) }}>
+                    <div className='' style={{ width: "100%", alignItems: "center", textAlign: "left", fontSize: "14px", display: "flex", flexDirection: "row", justifyContent: "space-between", cursor: 'pointer' }} onClick={() => { setselectActiveVersion('amp'); setshowSelectVersionMenu(false) }}>
                     <div style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
                         <Book size="20" color="#d9e3f0" onClick={() => { }} style={{ cursor: 'pointer', paddingRight: "13px" }} />
                         <span style={{ fontWeight: "600", color: "#FFFFFF", fontSize: "14px", }}>Amplified Version (AMP)</span>
                     </div>
                 </div>
-                <div className='' style={{ width: "100%", alignItems: "center", textAlign: "left", fontSize: "14px", display: "flex", flexDirection: "row", justifyContent: "space-between", cursor: 'not-allowed', }} onClick={() => { setshowSelectVersionMenu(false) }}>
-                    <div style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
-                        <Book size="20" color="#d9e3f0" onClick={() => { }} style={{ paddingRight: "13px" }} />
-                        <span style={{ fontWeight: "600", color: "#FFFFFF", fontSize: "14px", }}>Christian Standard Bible (CSB)</span>
-                    </div>
-                </div>
-
+                
             </div>
         </div>
 

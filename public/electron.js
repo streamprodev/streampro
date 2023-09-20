@@ -1299,29 +1299,30 @@ async function createWindow() {
 
 app.whenReady().then(async () => {
     createWindow();
-    autoUpdater.checkForUpdates();
-    // setTimeout(function () {
-    //     win.show();
-    // }, 5000);
+    setTimeout(function () {
+        showMessage(`Update available. Current version ${app.getVersion()}`);
+        autoUpdater.checkForUpdates();
+        // win.show();
+    }, 5000);
 });
 
 autoUpdater.on("update-available", (info) => {
-    curWindow.showMessage(`Update available. Current version ${app.getVersion()}`);
+    showMessage(`Update available. Current version ${app.getVersion()}`);
     let pth = autoUpdater.downloadUpdate();
-    curWindow.showMessage(pth);
+    showMessage(pth);
 });
 
 autoUpdater.on("update-not-available", (info) => {
-    curWindow.showMessage(`No update available. Current version ${app.getVersion()}`);
+    showMessage(`No update available. Current version ${app.getVersion()}`);
 });
 
 /*Download Completion Message*/
 autoUpdater.on("update-downloaded", (info) => {
-    curWindow.showMessage(`Update downloaded. Current version ${app.getVersion()}`);
+    showMessage(`Update downloaded. Current version ${app.getVersion()}`);
 });
 
 autoUpdater.on("error", (info) => {
-    curWindow.showMessage(info);
+    showMessage(info);
 });
 
 
@@ -1336,6 +1337,13 @@ app.on('activate', () => {
         createWindow()
     }
 });
+
+
+function showMessage(message) {
+    console.log("showMessage trapped");
+    console.log(message);
+    win.webContents.send("updateMessage", message);
+}
 
 
 //functions

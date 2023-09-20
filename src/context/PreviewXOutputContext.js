@@ -61,6 +61,7 @@ export function PreviewXOutputContextProvider({ children }) {
         ipcRenderer.on('setngrokUrl', setngrokUrlf);
         ipcRenderer.on('setngrokStatus', setngrokStatusf);
         ipcRenderer.on('closeNgrokSession', closeNgrokSessionf);
+        ipcRenderer.on('updateMessage', updateMessage);
 
         return () => {
             ipcRenderer.removeListener('setngrokUrlError', setngrokUrlErrorf);
@@ -68,6 +69,7 @@ export function PreviewXOutputContextProvider({ children }) {
             ipcRenderer.removeListener('setngrokStatus', setngrokStatusf);
             ipcRenderer.removeListener('closeNgrokSession', closeNgrokSessionf);
             ipcRenderer.removeListener('vmixDisconected', vmixDisconected)
+            ipcRenderer.removeListener('updateMessage', updateMessage)
             // ipcRenderer.removeListener('setReconnecting', setReconnecting)
         }
     }, []);
@@ -204,6 +206,10 @@ export function PreviewXOutputContextProvider({ children }) {
         });
     }
 
+    const updateMessage =(event,message)=>{
+console.log(event)
+        console.log(message)
+    }
     const vmixDisconected = () => {
         setoutputConnectionEstablished(0)
         setisLive(false)
