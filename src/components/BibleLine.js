@@ -7,7 +7,7 @@ import { Bookmark, Maximize4 } from "iconsax-react";
 
 
 const BibleLine = ({ line, index, search, parentRef }) => {
-    const { selectActiveVersion, setsearchVerse, selectedVerseArray, setselectedVerseArray, setChapterContent, activeChapterContent, setsearchBookObj, setsearchBook, setsearchChapter, setbibleView, books, setselectedChapter, chapters, setselectedBook, selectedChapter, selectedBook, setinputType, contentChapterRef, inputBookRef, showOneLine, setshowOneLine, showHilighted, setshowHilighted, multipleselectedVerseArray, setmultipleselectedVerseArray, setshowBookmarkContext, showBookmarkContext, selectedLine, setselectedLine, addBookmark } = useBible();
+    const { selectActiveVersion, setsearchVerse, selectedVerseArray, setselectedVerseArray, setChapterContent, activeChapterContent, setsearchBookObj, setsearchBook, setsearchChapter, setbibleView, books, setselectedChapter, chapters, setselectedBook, selectedChapter, selectedBook, setinputType, contentChapterRef, inputBookRef, showOneLine, setshowOneLine, showHilighted, setshowHilighted, multipleselectedVerseArray, setmultipleselectedVerseArray, setshowBookmarkContext, showBookmarkContext, selectedLine, setselectedLine, addBookmark, sethistoryData } = useBible();
 
     // const [showOneLine, setshowOneLine] = useState(false)
     // const [showHilighted, setshowHilighted] = useState(false)
@@ -183,14 +183,14 @@ const BibleLine = ({ line, index, search, parentRef }) => {
 
     return (
         search ?
-            <div style={{ display: "flex", alignItems: "flex-start", flexDirection: "column", paddingLeft: "17px", paddingRight: "19px", gap: "5px", marginBottom: "24px" }} tabIndex={0} onClick={() => { setmultipleselectedVerseArray([]); handleSearchToScripture(line) }} onMouseEnter={()=>setdisplayBookmark(true)} onMouseLeave={()=>setdisplayBookmark(false)}>
+            <div style={{ display: "flex", alignItems: "flex-start", flexDirection: "column", paddingLeft: "17px", paddingRight: "19px", gap: "5px", marginBottom: "24px" }} tabIndex={0} onClick={() => { setmultipleselectedVerseArray([]); handleSearchToScripture(line); sethistoryData(prev => prev.concat(line)) }} onMouseEnter={() => setdisplayBookmark(true)} onMouseLeave={() => setdisplayBookmark(false)}>
                 {/* <span style={{ listStyleType: "none", fontSize: '14px', fontWeight: "500", color: "#B1B1B1", cursor: "pointer", textAlign: "left" }} onClick={() => { }}>{line.book_name + " " + line.chapter_number + ":" + line.verse_number} ({selectActiveVersion.toUpperCase()})</span> */}
                 <div style={{ gap: "10px", display: "flex", justifyContent: "center", }} title='Bookmark Verse'>
 
                     <span style={{ listStyleType: "none", fontSize: '14px', fontWeight: "500", color: "#B1B1B1", cursor: "pointer", textAlign: "left" }} onClick={() => { }}>{line.book_name + " " + line.chapter_number + ":" + line.verse_number} ({selectActiveVersion.toUpperCase()})</span>
                     {
                         displayBookmark &&
-                        <Bookmark size={15} onClick={(e) => { e.stopPropagation(); addBookmark(line) }} style={{ paddingTop: "2px", zIndex: "10" }} />
+                        <Bookmark size={15} onClick={(e) => { e.stopPropagation(); addBookmark(line); }} style={{ paddingTop: "2px", zIndex: "10" }} />
                     }
                 </div>
                 <span style={{ listStyleType: "none", fontSize: '14px', fontWeight: "500", color: "#B1B1B1", cursor: "pointer", textAlign: "left", lineHeigt: "20" }} onClick={() => { }} dangerouslySetInnerHTML={{ __html: showHilighted ? getHighlightedText(line.text, line.terms) : line.text }} className={showOneLine ? "search-one-line" : ""}></span>
@@ -198,7 +198,7 @@ const BibleLine = ({ line, index, search, parentRef }) => {
             :
             <>
 
-                <div onContextMenu={() => { setshowBookmarkContext(true); setselectedLine(line) }} ref={line.ref} style={{ display: "flex", alignItems: "flex-start", flexDirection: "column", paddingLeft: "17px", paddingRight: "19px", gap: "5px", marginBottom: "24px", cursor: "pointer", userSelect: "none" }} onMouseEnter={()=>setdisplayBookmark(true)} onMouseLeave={()=>setdisplayBookmark(false)}
+                <div onContextMenu={() => { setshowBookmarkContext(true); setselectedLine(line) }} ref={line.ref} style={{ display: "flex", alignItems: "flex-start", flexDirection: "column", paddingLeft: "17px", paddingRight: "19px", gap: "5px", marginBottom: "24px", cursor: "pointer", userSelect: "none" }} onMouseEnter={() => setdisplayBookmark(true)} onMouseLeave={() => setdisplayBookmark(false)}
                     onClick={(e) => {
                         // console.log(e)
                         if (e.shiftKey) {
@@ -228,7 +228,7 @@ const BibleLine = ({ line, index, search, parentRef }) => {
                         setsearchVerse(index + 1);
                         setselectedVerseArray(line);
                     }}>
-                    <div style={{ gap: "10px", display: "flex", justifyContent: "center", outline:"none"}} title='Bookmark Verse'>
+                    <div style={{ gap: "10px", display: "flex", justifyContent: "center", outline: "none" }} title='Bookmark Verse'>
 
                         <span style={{ listStyleType: "none", fontSize: '14px', fontWeight: "500", color: getTextColor(), cursor: "pointer", textAlign: "left" }} onClick={() => { }}>{line.book_name + " " + line.chapter_number + ":" + line.verse_number} ({selectActiveVersion.toUpperCase()})</span>
                         {

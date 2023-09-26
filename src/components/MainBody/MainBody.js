@@ -31,12 +31,15 @@ import NotifySyncModal from '../NotifySyncModal';
 import { useSong } from '../../context/SongContext';
 import Bible from './BibleBody/Bible';
 import BibleBody from './BibleBody/BibleBody';
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes, useLocation } from 'react-router-dom';
 import { usePreviewXOutput } from '../../context/PreviewXOutputContext';
 import { useBible } from '../../context/BibleContext';
+import AllSongs from './SongBody/AllSongs';
+import UpdateDownloadingModal from '../UpdateDownloadingModal';
 const { ipcRenderer } = window.require('electron');
 
 function MainBody() {
+    const location = useLocation();
 
     // setSyncingToaster
     const { songData, setmenuEditId } = useSong()
@@ -212,13 +215,15 @@ function MainBody() {
                     <Routes>
                         <Route index path="/song" element={<SongBody />} />
                         <Route path="/bible" element={<BibleBody />} />
+                        <Route path="/all-song" element={<AllSongs />} />
                         {/* <Route path="*" element={<NoPage />} /> */}
                     </Routes>
                     {/* <SongBody /> */}
-                    <PreviewXOutput />
+                    {location.pathname != "/main/all-song" && <PreviewXOutput />}
 
                 </div>
             </div>
+            <UpdateDownloadingModal />
             <DeleteSongModal />
             <CreateSongModal />
             <EditSongModal />

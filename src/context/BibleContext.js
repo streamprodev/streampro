@@ -91,6 +91,8 @@ export function BibleContextProvider({ children }) {
     const [showBookmarkContext, setshowBookmarkContext] = useState(false)
     const [searchResultRef, setsearchResultRef] = useState(useRef(null))
     const [selectedLine, setselectedLine] = useState({})
+    const [bookmarkView, setbookmarkView] = useState('bookmark')
+    const [historyData, sethistoryData] = useState([])
     const { activeId, setactiveId, setactiveLine, activeLine } = useSong()
 
     const bookmarkRef = useRef(null)
@@ -129,15 +131,15 @@ export function BibleContextProvider({ children }) {
             setactiveBook(Kjv)
             setactiveBookTemp(Kjv)
         }
-         else if (selectActiveVersion == 'nkjv') {
+        else if (selectActiveVersion == 'nkjv') {
             setactiveBook(Nkjv)
             setactiveBookTemp(Nkjv)
         }
-         else if (selectActiveVersion == 'niv') {
+        else if (selectActiveVersion == 'niv') {
             setactiveBook(Niv)
             setactiveBookTemp(Niv)
         }
-         else if (selectActiveVersion == 'amp') {
+        else if (selectActiveVersion == 'amp') {
             setactiveBook(Amp)
             setactiveBookTemp(Amp)
         }
@@ -174,8 +176,8 @@ export function BibleContextProvider({ children }) {
             else if (selectActiveVersion == 'niv') {
                 setselectActiveVersionName('New International Version (NIV)')
             }
-            else if (selectActiveVersion == 'nlt') {
-                setselectActiveVersionName('New Living Translation (NLT)')
+            else if (selectActiveVersion == 'amp') {
+                setselectActiveVersionName('Amplified Version (AMP)')
             }
             else if (selectActiveVersion == 'csb') {
                 setselectActiveVersionName('Christian Standard Bible (CSB)')
@@ -562,10 +564,18 @@ export function BibleContextProvider({ children }) {
             })
         })
     }
+    const deleteHistory = (song) => {
+        sethistoryData(prev => {
+            return prev.filter(object => {
+                return object.id !== song.id;
+            })
+        })
+    }
 
     const addBookmark = (object) => {
 
         setbookmarkOPen(true)
+        setbookmarkView('bookmark')
         var index = bookmarkedData.findIndex(x => x.id == object.id);
         if (index === -1) {
             setbookmarkedData((prev) => {
@@ -614,7 +624,7 @@ export function BibleContextProvider({ children }) {
 
 
     return (
-        <BibleContext.Provider value={{ inputType, setinputType, searchBook, setsearchBook, books, chapters, NewTestamentBooks, OldTestamentBooks, bibleView, setbibleView, selectedBook, setselectedBook, selectedChapter, setselectedChapter, activeChapterContent, setactiveChapterContent, setChapterContent, selectActiveVersion, searchChapter, setsearchChapter, searchVerse, setsearchVerse, searchBookObj, setsearchBookObj, searchChapterObj, setsearchChapterObj, searchBookTemp, setsearchBookTemp, showSelectVersionMenu, setshowSelectVersionMenu, showSelectVersionMenuPosition, setshowSelectVersionMenuPosition, setselectActiveVersion, selectActiveVersionName, handleKeyPress, searchTerm, setSearchTerm, searchData, setsearchData, detectKeyDown, selectedVerseArray, setselectedVerseArray, contentChapterRef, bookmarkopen, setbookmarkOPen, bookmarkedData, setbookmarkedData, addBookmark, deleteBookmark, inputBookRef, activeBook, bookmarkRef, inputVerseRef, showOneLine, setshowOneLine, showHilighted, setshowHilighted, expandedView, setexpandedView, searchResultRef, setsearchResultRef, multipleselectedVerseArray, setmultipleselectedVerseArray, getVerseText, showBookmarkContext, setshowBookmarkContext, selectedLine, setselectedLine, showAllSearch, setshowAllSearch }}>
+        <BibleContext.Provider value={{ inputType, setinputType, searchBook, setsearchBook, books, chapters, NewTestamentBooks, OldTestamentBooks, bibleView, setbibleView, selectedBook, setselectedBook, selectedChapter, setselectedChapter, activeChapterContent, setactiveChapterContent, setChapterContent, selectActiveVersion, searchChapter, setsearchChapter, searchVerse, setsearchVerse, searchBookObj, setsearchBookObj, searchChapterObj, setsearchChapterObj, searchBookTemp, setsearchBookTemp, showSelectVersionMenu, setshowSelectVersionMenu, showSelectVersionMenuPosition, setshowSelectVersionMenuPosition, setselectActiveVersion, selectActiveVersionName, handleKeyPress, searchTerm, setSearchTerm, searchData, setsearchData, detectKeyDown, selectedVerseArray, setselectedVerseArray, contentChapterRef, bookmarkopen, setbookmarkOPen, bookmarkedData, setbookmarkedData, addBookmark, deleteBookmark, inputBookRef, activeBook, bookmarkRef, inputVerseRef, showOneLine, setshowOneLine, showHilighted, setshowHilighted, expandedView, setexpandedView, searchResultRef, setsearchResultRef, multipleselectedVerseArray, setmultipleselectedVerseArray, getVerseText, showBookmarkContext, setshowBookmarkContext, selectedLine, setselectedLine, showAllSearch, setshowAllSearch, bookmarkView, setbookmarkView, historyData, sethistoryData }}>
             {children}
         </BibleContext.Provider>
     )

@@ -1,6 +1,6 @@
 {
   "name": "streampro",
-  "version": "1.8.0",
+  "version": "1.8.4",
   "author": "Saiki Simpa",
   "private": true,
   "homepage": "./",
@@ -75,7 +75,6 @@
       "icon": "src/assets/wifi-logo.png",
       "requestedExecutionLevel": "requireAdministrator",
       "target": "nsis"
-      
     },
     "nsis": {
       "guid": "eb1a0fbb-fc70-428e-97f1-fa7080894806",

@@ -21,7 +21,7 @@ const { parseString } = require("xml2js");
 
 const { machineId, machineIdSync } = require("node-machine-id");
 const { initializeApp } = require("firebase/app");
-const { getFirestore, getCountFromServer, collection, getDocs, query, where, setDoc, doc } = require("@firebase/firestore");
+const { getFirestore, getCountFromServer, collection, getDocs, query, where, setDoc, doc, onSnapshot } = require("@firebase/firestore");
 const { electron } = require('process');
 const { autoUpdater, AppUpdater } = require("electron-updater");
 
@@ -37,6 +37,7 @@ let bookMarkedSongs
 let firestore
 let bibleKey
 let songKey
+let already_watching
 
 const port = 8088;                  //Save the port number where your server will be listening
 var session = '';
@@ -52,6 +53,7 @@ var bearer_token = '2S8k9KqD12kvPVeT5CxUacNymrv_7TXuGa24NwpgxuiyAmLd6';//api key
 // var auth_token = '1bXHu9TS8UqouHW9z35ttCKL8VC_6saRQWiViaJDisjavzT5Q';
 // var bearer_token = '2RxyddNquVUsbclmKkrN9POK9j1_Joh8LMatgfKscCoQNmnq';//api key
 var session_id;
+var update_found;
 
 autoUpdater.autoDownload = false;
 autoUpdater.autoInstallOnAppQuit = true;
@@ -1082,6 +1084,9 @@ ipcMain.on('syncSongs', async (event, data) => {
 
 
 
+                    if (!already_watching) {
+                        watchSnapshot();
+                    }
                 }
             } else {
                 resolve([])
@@ -1300,13 +1305,28 @@ async function createWindow() {
 app.whenReady().then(async () => {
     createWindow();
     setTimeout(function () {
-        showMessage(`Update available. Current version ${app.getVersion()}`);
-        autoUpdater.checkForUpdates();
+        // showMessage(`Update available. Current version ${app.getVersion()}`);
+        setInterval(() => {
+            if (!update_found) {
+                autoUpdater.checkForUpdatesAndNotify();
+            }
+        }, 60000);
         // win.show();
+    }, 5000);
+    setTimeout(() => {
+        watchSnapshot()
     }, 5000);
 });
 
 autoUpdater.on("update-available", (info) => {
+    update_found = true;
+    win.webContents.send("updateAvailable", info);
+    // showMessage(`Update available. Current version ${app.getVersion()}`);
+    // let pth = autoUpdater.downloadUpdate();
+    // showMessage(pth);
+});
+ipcMain.on("update-available-manual", () => {
+    update_found = true;
     showMessage(`Update available. Current version ${app.getVersion()}`);
     let pth = autoUpdater.downloadUpdate();
     showMessage(pth);
@@ -1319,6 +1339,11 @@ autoUpdater.on("update-not-available", (info) => {
 /*Download Completion Message*/
 autoUpdater.on("update-downloaded", (info) => {
     showMessage(`Update downloaded. Current version ${app.getVersion()}`);
+    setImmediate(() => {
+        win.setClosable(true);
+        autoUpdater.quitAndInstall();
+    })
+    // autoUpdater.quitAndInstall()
 });
 
 autoUpdater.on("error", (info) => {
@@ -1418,5 +1443,132 @@ function addSeconds(date, seconds) {
     return date;
 }
 
+function watchSnapshot() {
+    already_watching = 1;
+    db.all('SELECT * FROM registration_info where device_id = ? limit 1', [machineIdSync({ original: true })], async (err, rows) => {
+        if (err) {
+        } else {
+            if (rows.length > 0) {
+                const registrationInfo = rows[0]
+                if (registrationInfo.auto_sync == 1) {
+
+                    //get last sync date
+
+
+                    const lastSyncDate = registrationInfo.last_sync_date
+                    if (!firestore) {
+                        const firebaseConfig = {
+                            apiKey: registrationInfo.firestore_apikey,
+                            projectId: registrationInfo.firestore_projectid,
+                            appId: registrationInfo.firestore_appid,
+                        };
+                        firestore = getFirestore(initializeApp(firebaseConfig))
+
+                    }
+
+                    // Initialize Firebase
+                    const collection_name = registrationInfo.license_key + "_songs"
+
+                    const collection_ref = collection(firestore, collection_name)
+                    const q = query(collection_ref, where("updated", ">", lastSyncDate))
+
+                    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+                        const cities = [];
+                        querySnapshot.forEach((doc) => {
+                            cities.push(doc.data().title);
+                        });
+                        console.log("Current cities in CA: ", cities.join(", "));
+                        if (querySnapshot.length > 0) {
+                            db.all('SELECT * FROM songs order by title asc', async (err, rows) => {
+                                if (err) {
+                                    console.log(err)
+                                    // reject(err);
+                                } else {
+                                    const local_songs = rows;
+                                    if (!lastSyncDate) {
+                                    } else {
+                                        const updated_cloud_songs = []
+
+                                        querySnapshot.forEach(country => {
+                                            updated_cloud_songs.push({
+                                                ...country.data()
+                                            })
+                                        })
+                                        // return 
+
+                                        //map to get songs where updated is greater than last sync date on local songs
+                                        let newArray = local_songs.filter(function (el) {
+                                            return el.updated > lastSyncDate
+                                        }
+                                        );
+
+                                        //create or update cloud mapped songs to local db
+                                        if (updated_cloud_songs.length > 0) {
+                                            console.log('updated_cloud_songs.length')
+                                            db.run('BEGIN TRANSACTION');
+                                            // Insert records
+                                            updated_cloud_songs.forEach((record) => {
+                                                db.run('INSERT OR REPLACE INTO songs (title, body, uuid,created,updated)VALUES(?, ?, ?,?,?); ', [
+                                                    record.title,
+                                                    record.body,
+                                                    record.uuid,
+                                                    record.created,
+                                                    new Date().toJSON()
+                                                ]);
+                                            });
+
+                                            // Commit the transaction
+                                            db.run('COMMIT', (err) => {
+                                                if (err) {
+                                                    console.log(err)
+                                                    win.webContents.send('syncError', err);
+                                                    return
+                                                } else {
+                                                }
+                                            });
+
+                                        }
+
+                                        //save cloud array to db
+                                        if (newArray.length > 0) {
+                                            console.log('newArray.length')
+
+                                            const result = await uploadToFirebase(firestore, collection_name, newArray)
+
+                                        }
+
+                                        setTimeout(() => {
+                                            db.run('UPDATE registration_info SET last_sync_date = ?  where license_key = ?', [
+                                                addSeconds(new Date(), 2).toJSON(),
+                                                registrationInfo.license_key,
+                                            ], (err) => {
+                                                if (err) {
+                                                    win.webContents.send('syncError', err);
+                                                    return
+                                                } else {
+
+
+                                                    win.webContents.send('resetSongData', 'sync');
+                                                    win.webContents.send('syncComplete', 'done');
+                                                    return
+                                                }
+                                            });
+
+                                        }, 100);
+
+                                    }
+                                }
+                            });
+
+                        }
+
+                    });
+                }
+            } else {
+                resolve([])
+            }
+        }
+    })
+}
 
 

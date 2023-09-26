@@ -29,10 +29,10 @@ const SideBar = () => {
             <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-start", alignItems: "flex-start", paddingLeft: "16px", paddingTop: expandedView ? "83px" : "80px", gap: "20px" }}>
                 <div style={{ display: "flex", flexDirection: 'row', justifyContent: "center" }}>
                     <div style={{ display: "flex", alignItems: "center", cursor: "pointer" }} onClick={() => { setoutputLine(''); navigate("/main/song") }}>
-                        <PiMusicNote style={{ paddingRight: "10px" }} size={24} color={location.pathname == "/main/song" ? "#FF3939" : "#ffffff"} />
+                        <PiMusicNote style={{ paddingRight: "10px" }} size={24} color={(location.pathname == "/main/song" || location.pathname == "/main/all-song") ? "#FF3939" : "#ffffff"} />
                         {
                             !expandedView &&
-                            <span style={{ fontSize: "15px", color: location.pathname == "/main/song" ? "#FF3939" : "#ffffff" }}>Songs</span>
+                            <span style={{ fontSize: "15px", color: (location.pathname == "/main/song" || location.pathname == "/main/all-song") ? "#FF3939" : "#ffffff" }}>Songs</span>
                         }
                     </div>
 

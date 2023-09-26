@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
 import SideBar from '../../SideBar';
 import CreateSongModal from '../../CreateSongModal';
-import { Copy, Edit2, ProfileCircle, SearchNormal, Setting2, ArrowDown2, ArrowUp2, Book1, Book } from 'iconsax-react';
+import { Copy, Edit2, ProfileCircle, SearchNormal, Setting2, ArrowDown2, ArrowUp2, Book1, Book, Timer1, Bookmark } from 'iconsax-react';
 import ImportSongsModal from '../../ImportSongsModal';
 import SongListItem from '../../SongListItem';
 import MiniSearch from 'minisearch'
@@ -27,6 +27,7 @@ import { Hint } from 'react-autocomplete-hint';
 import BooksListItem from '../../BooksListItem';
 import SelectVersionMenu from './SelectVersionMenu';
 import BibleBookmarkItem from './BibleBookmarkItem';
+import { LuHistory } from "react-icons/lu";
 const { ipcRenderer } = window.require('electron');
 
 function BookmarkXBooks() {
@@ -42,7 +43,7 @@ function BookmarkXBooks() {
 
     const { activeId, setactiveId, setBody, setTitle, activeSongArray, menuEditId, setmenuEditId, setactiveLine, activeLine, displayData, openModal, setisDeleteModalOpen, deleteSong, setdeleteSong } = useSong()
 
-    const { inputType, setinputType, searchBook, setsearchBook, books, chapters, NewTestamentBooks, OldTestamentBooks, searchChapter, setsearchChapter, searchVerse, setsearchVerse, searchBookObj, setsearchBookObj, searchChapterObj, setsearchChapterObj, searchBookTemp, setsearchBookTemp, showSelectVersionMenu, setshowSelectVersionMenu, setshowSelectVersionMenuPosition, selectActiveVersionName, handleKeyPress, searchTerm, setSearchTerm, contentChapterRef, detectKeyDown, bookmarkopen, setbookmarkOPen, deleteBookmark, addBookmark, bookmarkedData, setbookmarkedData, setsearchData, inputBookRef, setselectedVerseArray, activeBook, bookmarkRef, inputVerseRef, searchResultRef, setsearchResultRef, multipleselectedVerseArray, setmultipleselectedVerseArray } = useBible()
+    const { inputType, setinputType, searchBook, setsearchBook, books, chapters, NewTestamentBooks, OldTestamentBooks, searchChapter, setsearchChapter, searchVerse, setsearchVerse, searchBookObj, setsearchBookObj, searchChapterObj, setsearchChapterObj, searchBookTemp, setsearchBookTemp, showSelectVersionMenu, setshowSelectVersionMenu, setshowSelectVersionMenuPosition, selectActiveVersionName, handleKeyPress, searchTerm, setSearchTerm, contentChapterRef, detectKeyDown, bookmarkopen, setbookmarkOPen, deleteBookmark, addBookmark, bookmarkedData, setbookmarkedData, setsearchData, inputBookRef, setselectedVerseArray, activeBook, bookmarkRef, inputVerseRef, searchResultRef, setsearchResultRef, multipleselectedVerseArray, setmultipleselectedVerseArray, bookmarkView, setbookmarkView, historyData, sethistoryData } = useBible()
 
     // const [searchBookTemp, setsearchBookTemp] = useState(searchBookObj.label);
     const [searchChapterTemp, setsearchChapterTemp] = useState();
@@ -249,9 +250,10 @@ function BookmarkXBooks() {
             }
             else {
                 setsearchVerse(inputElement.value)
-                console.log(inputElement.value, searchChapter, searchBookObj.book_number)
-                console.log(activeBook.find(({ book_number, chapter_number, verse_number }) => verse_number == inputElement.value && chapter_number == searchChapter && book_number == searchBookObj.book_number), inputElement.value, searchChapter, searchBookObj)
+                // console.log(inputElement.value, searchChapter, searchBookObj.book_number)
+                // console.log(activeBook.find(({ book_number, chapter_number, verse_number }) => verse_number == inputElement.value && chapter_number == searchChapter && book_number == searchBookObj.book_number), inputElement.value, searchChapter, searchBookObj)
                 setselectedVerseArray(activeBook.find(({ book_number, chapter_number, verse_number }) => verse_number == inputElement.value && chapter_number == parseInt(searchChapter) && book_number == searchBookObj.book_number))
+                sethistoryData(prev => prev.concat(activeBook.find(({ book_number, chapter_number, verse_number }) => verse_number == inputElement.value && chapter_number == parseInt(searchChapter) && book_number == searchBookObj.book_number)))
                 inputElement.style.width = 'auto';
                 inputElement.style.width = `${inputElement.value.length * 7.7 ?? 7.7}px`;
             }
@@ -331,7 +333,12 @@ function BookmarkXBooks() {
         <div className='bookmarkXbooks' style={{}} onKeyDown={detectKeyDown}>
             <div className={bookmarkopen ? 'bible-bookmarks bookmark-show' : 'bible-bookmarks bookmark-hide'} >
                 <div className='' style={{ width: "90%", alignItems: "center", textAlign: "left", fontSize: "14px", paddingLeft: "24px", display: "flex", flexDirection: "row", paddingTop: "5px", justifyContent: "space-between" }}>
-                    <p style={{ fontWeight: "600", color: "#FFFFFF", fontSize: "14px", }}>Bookmarks</p>
+                    {
+                        bookmarkView == 'history' ?
+                            <p style={{ fontWeight: "600", color: "#FFFFFF", fontSize: "14px", }}>History</p>
+                            :
+                            <p style={{ fontWeight: "600", color: "#FFFFFF", fontSize: "14px", }}>Bookmarks</p>
+                    }
                     {
                         bookmarkopen ?
                             <ArrowUp2 size="20" color="#d9e3f0" onClick={() => { setbookmarkOPen(false) }} style={{ cursor: 'pointer', paddingRight: "13px" }} />
@@ -341,13 +348,26 @@ function BookmarkXBooks() {
                 </div>
                 <div className='' style={{ overflow: "scroll", height: "100%", paddingLeft: "24px", width: "90%", }} ref={bookmarkRef}>
                     {
-                        bookmarkedData.length > 0 &&
+                        (bookmarkView == 'bookmark' && bookmarkedData.length) > 0 &&
                         bookmarkedData.map((item) => (
+                            <BibleBookmarkItem key={item.id} verse={item} type={'bookmark'} />
+                        ))
+                    }
+                    {
+                        (bookmarkView == 'history' && historyData.length) > 0 &&
+                        historyData.map((item) => (
                             <BibleBookmarkItem key={item.id} verse={item} type={'bookmark'} />
                         ))
                     }
 
                     {/* <ToastContainer/> */}
+                </div>
+                <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", width: "100%", paddingTop: "10px", paddingBottom: "10px" }}>
+                    {
+                        bookmarkView == 'history' ?
+                            <Bookmark size="20" color="#d9e3f0" onClick={() => { setbookmarkView('bookmark') }} style={{ cursor: 'pointer', paddingRight: "24px" }} /> :
+                            <LuHistory size="20" color="#d9e3f0" onClick={() => { setbookmarkView('history') }} style={{ cursor: 'pointer', paddingRight: "24px" }} />
+                    }
                 </div>
             </div>
 

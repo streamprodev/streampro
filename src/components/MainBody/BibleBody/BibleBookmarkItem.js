@@ -10,7 +10,7 @@ const { ipcRenderer } = window.require('electron');
 const BibleBookmarkItem = ({ verse }) => {
 
     const { activeId, setactiveId, setactiveLine, songDisplayRef } = useSong()
-    const { selectedVerseArray, setselectedChapter, setChapterContent, setsearchBookObj, setsearchBook, setsearchChapter, setsearchVerse, setbibleView, chapters, books, deleteBookmark, contentChapterRef, setinputType, setselectedBook, setselectedVerseArray, bookmarkRef } = useBible()
+    const { selectedVerseArray, setselectedChapter, setChapterContent, setsearchBookObj, setsearchBook, setsearchChapter, setsearchVerse, setbibleView, chapters, books, deleteBookmark, contentChapterRef, setinputType, setselectedBook, setselectedVerseArray, bookmarkRef, bookmarkView, deleteHistory } = useBible()
 
 
     const handleSearchToScripture = () => {
@@ -52,12 +52,17 @@ const BibleBookmarkItem = ({ verse }) => {
 
 
     const removeBookmark = () => {
+        if (bookmarkView == 'history') {
+            deleteHistory(verse)
 
-        deleteBookmark(verse)
+        } else {
+            deleteBookmark(verse)
+
+        }
     };
 
     return (
-        <div className="SongListItem" style={{ display: "flex", justifyContent: "space-between", flexDirection: "row", alignItems: "center", width: "100%", textAlign: "left",marginBottom:"5px" }}>
+        <div className="SongListItem" style={{ display: "flex", justifyContent: "space-between", flexDirection: "row", alignItems: "center", width: "100%", textAlign: "left", marginBottom: "5px" }}>
             <p style={{ listStyleType: "none", fontSize: '14px', fontWeight: "600", color: selectedVerseArray.id == verse.id ? "rgb(255, 57, 57)" : "#B1B1B1", cursor: "pointer", lineHeight: "1.5px" }} onClick={() => {
                 handleSearchToScripture()
             }}>{verse.book_name + " " + verse.chapter_number + ":" + verse.verse_number}</p>

@@ -23,6 +23,7 @@ export function SongContextProvider({ children }) {
     const { registrationInfo } = useRegistrationInfo();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDeleteModalOpen, setisDeleteModalOpen] = useState(false);
+    const [isUpdateDownloadingModalOpen, setisUpdateDownloadingModalOpen] = useState(false);
     const [isEditModalOpen, setisEditModalOpen] = useState(false);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [songData, setsongData] = useState([]);
@@ -42,6 +43,8 @@ export function SongContextProvider({ children }) {
     let [importing, setimporting] = useState(false);
     let [color, setColor] = useState("#ffffff");
     const [outPutType, setoutPutType] = useState('song');
+    const [AllSonggSelectionArray, setAllSonggSelectionArray] = useState([]);
+    const [searchAllSongsTerm, setsearchAllSongsTerm] = useState('');
 
     const location = useLocation();
     const LyricsLineRef = useRef([]);
@@ -56,6 +59,7 @@ export function SongContextProvider({ children }) {
         ipcRenderer.on('deleteSong', removedeletedSong);
         ipcRenderer.on('setSongDataEvent', setSongDataEvent);
         ipcRenderer.on('clearDisplayData', clearDisplayData);
+        ipcRenderer.on('updateAvailable', updateAvailable);
 
         return () => {
             ipcRenderer.removeListener('clearDisplayData', clearDisplayData);
@@ -63,6 +67,7 @@ export function SongContextProvider({ children }) {
             ipcRenderer.removeListener('resetSongData', resetSongData);
             ipcRenderer.removeListener('txt-files-listed', handleFolderContents);
             ipcRenderer.removeListener('deleteSong', removedeletedSong);
+            ipcRenderer.on('updateAvailable', updateAvailable);
         }
     }, []);
 
@@ -77,6 +82,12 @@ export function SongContextProvider({ children }) {
             }),
         []
     );
+
+    const updateAvailable = (event, info) => {
+        console.log(info);
+        setisUpdateDownloadingModalOpen(true);
+
+    }
 
 
     useEffect(() => {
@@ -436,12 +447,16 @@ export function SongContextProvider({ children }) {
         setisDeleteModalOpen(false);
     };
 
+    const closisUpdateDownloadingModal = () => {
+        setisUpdateDownloadingModalOpen(false);
+    };
+
     const openImportModal = () => {
         setIsImportModalOpen(true);
     };
 
     return (
-        <SongContext.Provider value={{ isModalOpen, setIsModalOpen, isDeleteModalOpen, setisDeleteModalOpen, isEditModalOpen, setisEditModalOpen, isImportModalOpen, setIsImportModalOpen, songData, setsongData, displayData, setdisplayData, bookmarkedData, setbookmarkedData, searchTerm, setSearchTerm, activeSong, setactiveSong, activeSongArray, setactiveSongArray, activeId, setactiveId, activeLine, setactiveLine, deleteSong, setdeleteSong, title, setTitle, body, setBody, menuEditId, setmenuEditId, bookmarkopen, setbookmarkOPen, importing, setimporting, songListRef, handleKeyPress, openModal, addBookmark, removedeletedSong, deleteBookmark, closeModal, handleFormSubmitEdit, closeDeleteModal, openImportModal, handleFormSubmit, closeImportModal, songDisplayRef, outPutType, setoutPutType, LyricsLineRef, LyricsLineParentRef, detectKeyDown }}>
+        <SongContext.Provider value={{ isModalOpen, setIsModalOpen, isDeleteModalOpen, setisDeleteModalOpen, isEditModalOpen, setisEditModalOpen, isImportModalOpen, setIsImportModalOpen, songData, setsongData, displayData, setdisplayData, bookmarkedData, setbookmarkedData, searchTerm, setSearchTerm, activeSong, setactiveSong, activeSongArray, setactiveSongArray, activeId, setactiveId, activeLine, setactiveLine, deleteSong, setdeleteSong, title, setTitle, body, setBody, menuEditId, setmenuEditId, bookmarkopen, setbookmarkOPen, importing, setimporting, songListRef, handleKeyPress, openModal, addBookmark, removedeletedSong, deleteBookmark, closeModal, handleFormSubmitEdit, closeDeleteModal, openImportModal, handleFormSubmit, closeImportModal, songDisplayRef, outPutType, setoutPutType, LyricsLineRef, LyricsLineParentRef, detectKeyDown, AllSonggSelectionArray, setAllSonggSelectionArray, searchAllSongsTerm, setsearchAllSongsTerm, isUpdateDownloadingModalOpen, setisUpdateDownloadingModalOpen, closisUpdateDownloadingModal }}>
             {children}
         </SongContext.Provider>
     )
