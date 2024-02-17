@@ -71,16 +71,21 @@ function AllSongsItem({ type, item, selectSong, selectAllSongs }) {
                 <div style={{ display: 'flex', paddingRight: "24px", flex: 2.5, height: "72px", alignItems: "center", justifyContent: "space-between" }}>
                     <span>{finalupdatedDate}</span>
                     <div style={{ display: 'flex', alignItems: "center", justifyContent: "space-between", gap: "20px" }}>
-                        <Edit2 size="20" color="#B1B1B1" onClick={() => {
+                        <div title="Edit Song" >
+                            <Edit2 size="20" color="#B1B1B1" style={{ cursor: "pointer" }} onClick={() => {
 
-                            setTitle(item.title)
-                            setBody(item.body)
-                            setmenuEditId(item.uuid)
-                            openModal(1)
-                        }} />
-                        <Trash size="20" color="#FF3939" onClick={() => {
-                            openDeleteModal()
-                        }} />
+                                setTitle(item.title)
+                                setBody(item.body)
+                                setmenuEditId(item.uuid)
+                                openModal(1)
+                            }} />
+                        </div>
+                        <div title="Delete Song" >
+                            <Trash size="20" color="#FF3939" onClick={() => {
+                                openDeleteModal()
+                            }} style={{ cursor: "pointer" }} />
+
+                        </div>
                     </div>
                 </div>
             </div>

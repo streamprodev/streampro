@@ -35,6 +35,7 @@ import AppMain from './components/AppMain';
 import { BrowserRouter, Routes, Route, HashRouter } from "react-router-dom";
 import EnterLicenseKey from './components/EnterLicenseKey';
 import { BibleContextProvider } from './context/BibleContext';
+import { EwGrabberContextProvider } from './context/EwGrabberContext';
 // const icmp = window.require('ping'); 
 const { ipcRenderer } = window.require('electron');
 
@@ -71,19 +72,21 @@ function App() {
       <HashRouter>
         <SongContextProvider>
           <BibleContextProvider>
-            <PreviewXOutputContextProvider>
-              <div className="App">
-                {/* <AppMain /> */}
-                <AppNav />
-                <Routes>
-                  <Route index path="/" element={<Splash />} />
-                  <Route path="/register" element={<EnterLicenseKey />} />
-                  <Route path="/main/*" element={<MainBody />} />
-                  {/* <Route path="*" element={<NoPage />} /> */}
-                </Routes>
-              </div>
-              <ToastContainer />
-            </PreviewXOutputContextProvider>
+            <EwGrabberContextProvider>
+              <PreviewXOutputContextProvider>
+                <div className="App">
+                  {/* <AppMain /> */}
+                  <AppNav />
+                  <Routes>
+                    <Route index path="/" element={<Splash />} />
+                    <Route path="/register" element={<EnterLicenseKey />} />
+                    <Route path="/main/*" element={<MainBody />} />
+                    {/* <Route path="*" element={<NoPage />} /> */}
+                  </Routes>
+                </div>
+                <ToastContainer />
+              </PreviewXOutputContextProvider>
+            </EwGrabberContextProvider>
           </BibleContextProvider>
         </SongContextProvider>
       </HashRouter>

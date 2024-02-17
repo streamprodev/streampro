@@ -365,8 +365,8 @@ function BookmarkXBooks() {
                 <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", width: "100%", paddingTop: "10px", paddingBottom: "10px" }}>
                     {
                         bookmarkView == 'history' ?
-                            <Bookmark size="20" color="#d9e3f0" onClick={() => { setbookmarkView('bookmark') }} style={{ cursor: 'pointer', paddingRight: "24px" }} /> :
-                            <LuHistory size="20" color="#d9e3f0" onClick={() => { setbookmarkView('history') }} style={{ cursor: 'pointer', paddingRight: "24px" }} />
+                            <Bookmark size="16" color="#d9e3f0" onClick={() => { setbookmarkView('bookmark') }} style={{ cursor: 'pointer', paddingRight: "24px" }} /> :
+                            <LuHistory size="16" color="#d9e3f0" onClick={() => { setbookmarkView('history') }} style={{ cursor: 'pointer', paddingRight: "24px" }} />
                     }
                 </div>
             </div>

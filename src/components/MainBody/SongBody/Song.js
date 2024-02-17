@@ -66,10 +66,10 @@ function Song() {
             <span style={{ fontSize: '14px', fontWeight: "600", color: "#FFFFFF", marginTop: "30px", textAlign: "left", marginLeft: "90px" }}>{activeSong && activeSong.title} </span>
 
             <div className='song-body' style={{ height: "90%", width: "100%", overflow: "scroll", }}>
-                <div ref={songDisplayRef} className='bookmarks' style={{ overflow: "scroll", height: "100%", width: "100%", marginBottom: "10px",outline:"none" }} tabIndex="-1" onKeyDown={detectKeyDown}>
+                <div ref={songDisplayRef} className='bookmarks' style={{ overflow: "scroll", height: "100%", width: "100%", marginBottom: "10px", outline: "none" }} tabIndex="-1" onKeyDown={detectKeyDown}>
                     {activeSongArray &&
                         activeSongArray.map((item, index) => (
-                            <LyricsLine key={index} line={item} index={index} activeLine={activeLine} setactiveLine={setactiveLine} ownRef={LyricsLineRef} parentRef={songDisplayRef}/>
+                            <LyricsLine key={index} line={item} index={index} activeLine={activeLine} setactiveLine={setactiveLine} ownRef={LyricsLineRef} parentRef={songDisplayRef} />
                         ))
                     }
                 </div>

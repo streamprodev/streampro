@@ -92,7 +92,7 @@ export function PreviewXOutputContextProvider({ children }) {
         if (isLive) {
             setfinaloutputLine(outputLine)
         } else if (outputConnectionEstablished) {
-            if (location.pathname == '/main/bible') {
+            if (location.pathname == '/main/bible' || location.pathname == '/main/ew-graber') {
 
                 setTimeout(() => {
                     // delete selectedVerseArray['ref'];
@@ -127,7 +127,7 @@ export function PreviewXOutputContextProvider({ children }) {
 
     useEffect(() => {
         if (outputConnectionEstablished) {
-            if (location.pathname == '/main/bible') {
+            if (location.pathname == '/main/bible' || location.pathname == '/main/ew-graber') {
 
                 setTimeout(() => {
                     // delete selectedVerseArray['ref'];
@@ -206,8 +206,8 @@ export function PreviewXOutputContextProvider({ children }) {
         });
     }
 
-    const updateMessage =(event,message)=>{
-console.log(event)
+    const updateMessage = (event, message) => {
+        console.log(event)
         console.log(message)
     }
     const vmixDisconected = () => {

@@ -71,7 +71,7 @@ function AllSongs() {
         if (AllSonggSelectionArray.length > 0) {
             setAllSonggSelectionArray([])
         } else {
-            setAllSonggSelectionArray(displayData)
+            setAllSonggSelectionArray(currentTableData)
         }
     }
 

@@ -7,6 +7,8 @@ import { PiMusicNote } from "react-icons/pi";
 import { useNavigate, useLocation } from "react-router-dom"
 import { usePreviewXOutput } from '../context/PreviewXOutputContext';
 import { useBible } from '../context/BibleContext';
+import { LuSettings2 } from "react-icons/lu";
+import { TbBrandGooglePlay } from "react-icons/tb";
 
 
 const SideBar = () => {
@@ -28,8 +30,8 @@ const SideBar = () => {
             }
             <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-start", alignItems: "flex-start", paddingLeft: "16px", paddingTop: expandedView ? "83px" : "80px", gap: "20px" }}>
                 <div style={{ display: "flex", flexDirection: 'row', justifyContent: "center" }}>
-                    <div style={{ display: "flex", alignItems: "center", cursor: "pointer" }} onClick={() => { setoutputLine(''); navigate("/main/song") }}>
-                        <PiMusicNote style={{ paddingRight: "10px" }} size={24} color={(location.pathname == "/main/song" || location.pathname == "/main/all-song") ? "#FF3939" : "#ffffff"} />
+                    <div style={{ display: "flex", alignItems: "center", cursor: "pointer" }} onClick={() => { navigate("/main/song") }}>
+                        <LuSettings2 style={{ paddingRight: "10px" }} size={24} color={(location.pathname == "/main/song" || location.pathname == "/main/all-song") ? "#FF3939" : "#ffffff"} />
                         {
                             !expandedView &&
                             <span style={{ fontSize: "15px", color: (location.pathname == "/main/song" || location.pathname == "/main/all-song") ? "#FF3939" : "#ffffff" }}>Songs</span>
@@ -37,12 +39,32 @@ const SideBar = () => {
                     </div>
 
                 </div>
+                <hr style={{ width: "80%", color: '#B1B1B1' }} />
                 <div >
                     <div style={{ display: "flex", alignItems: "center", cursor: "pointer" }} onClick={() => { setoutputLine(''); navigate("/main/bible") }}>
                         <BookSquare style={{ paddingRight: "10px" }} size={24} color={location.pathname == "/main/bible" ? "#FF3939" : "#ffffff"} />
                         {
                             !expandedView &&
                             <span style={{ fontSize: "15px", color: location.pathname == "/main/bible" ? "#FF3939" : "#ffffff" }}>Bible</span>
+                        }
+                    </div>
+                </div>
+                <div >
+                    <div style={{ display: "flex", alignItems: "center", cursor: "pointer" }} onClick={() => { setoutputLine(''); navigate("/main/bible") }}>
+                        <BookSquare style={{ paddingRight: "10px" }} size={24} color={location.pathname == "/main/bible" ? "#FF3939" : "#ffffff"} />
+                        {
+                            !expandedView &&
+                            <span style={{ fontSize: "15px", color: location.pathname == "/main/bible" ? "#FF3939" : "#ffffff" }}>Bible</span>
+                        }
+                    </div>
+                </div>
+                <hr style={{ width: "80%", color: '#B1B1B1' }} />
+                <div >
+                    <div style={{ display: "flex", alignItems: "center", cursor: "pointer" }} onClick={() => { setoutputLine(''); navigate("/main/ew-graber") }}>
+                        <TbBrandGooglePlay style={{ paddingRight: "10px" }} size={24} color={location.pathname == "/main/ew-graber" ? "#FF3939" : "#ffffff"} />
+                        {
+                            !expandedView &&
+                            <span style={{ fontSize: "15px", color: location.pathname == "/main/ew-graber" ? "#FF3939" : "#ffffff" }}>EW Grabber</span>
                         }
                     </div>
                 </div>

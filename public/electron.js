@@ -15,6 +15,12 @@ var os = require("os");
 const { v4: uuidv4 } = require('uuid');
 const { parseString } = require("xml2js");
 
+const screenshot = require('screenshot-desktop')
+const { createWorker } = require('tesseract.js');
+const sharp = require('sharp');
+const { spawn } = require('child_process');
+const { exec } = require('child_process');
+
 
 
 
@@ -54,9 +60,19 @@ var bearer_token = '2S8k9KqD12kvPVeT5CxUacNymrv_7TXuGa24NwpgxuiyAmLd6';//api key
 // var bearer_token = '2RxyddNquVUsbclmKkrN9POK9j1_Joh8LMatgfKscCoQNmnq';//api key
 var session_id;
 var update_found;
+var isEwGrabberActive = false
 
 autoUpdater.autoDownload = false;
 autoUpdater.autoInstallOnAppQuit = true;
+
+createWorker('eng').then((worker) => {
+    console.log("we are here");
+    global.shared = {
+        worker: worker
+    };
+
+});
+console.log("done creating workers")
 
 //handlers
 ipcMain.handle('getSongData', async () => {
@@ -1261,6 +1277,33 @@ ipcMain.on('saveRegistrationInfo', async (event, registration_info) => {
     });
 });
 
+ipcMain.on("activateEwGrabber", function (event, arg) {
+
+
+
+    var pat = __dirname + "/virtual_monitor_installer/check_installation.bat";
+    console.log("Current directory:", pat);
+
+    // exec(pat, (error, stdout, stderr) => {
+
+    //     if (error) {
+    //         console.error(`error: ${error.message}`);
+    //         return;
+    //     }
+    //     if (stderr) {
+    //         console.error(`stderr: ${stderr}`);
+    //         return;
+    //     }
+    //     console.log(`stdout:\n${stdout}`);
+    // })
+
+
+    setImmediate(function A() {
+        getEasyWorshipOutput(event);
+    });
+
+});
+
 
 
 async function createWindow() {
@@ -1571,4 +1614,37 @@ function watchSnapshot() {
     })
 }
 
+function getEasyWorshipOutput(event) {
+    //console.log("in main process")
+    isEwGrabberActive = true;
+    var firstDate = new Date();
+    console.log(new Date().toLocaleTimeString());
+
+    // screenshot.listDisplays().then((displays) => {
+    //     console.log("about to show displays")
+    //     console.log(new Date().toLocaleTimeString());
+    //     console.log(displays);
+
+    // });
+
+
+    screenshot({ screen: '\\\\.\\DISPLAY4' }).then((img) => {
+        (async () => {
+            if (!isEwGrabberActive) {
+                return;
+            }
+            // console.log(img);
+            event.sender.send("grabber-finished-image", img);
+            const compressedImage = await sharp(img).webp({ quality: 1 }).resize({ width: 300 }).toBuffer();
+            const worker = global.shared.worker;
+            const { data: { text } } = await worker.recognize(compressedImage);
+            console.log(new Date().getTime() - firstDate.getTime());
+            console.log(text);
+            event.sender.send("grabber-finished", text);
+            setImmediate(function A() {
+                getEasyWorshipOutput(event);
+            });
+        })();
+    });
+}
 

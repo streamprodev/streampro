@@ -135,7 +135,7 @@ function PreviewXOutput() {
                 }
             }
 
-        } else if (location.pathname == "/main/bible") {
+        } else if (location.pathname == "/main/bible" || location.pathname == '/main/ew-graber') {
             setoutPutType('bible')
             if (activeChapterContent.length > 0) {
 
@@ -233,7 +233,7 @@ function PreviewXOutput() {
                 )}
             </div>
 
-            <div className='externalConnection'>
+            {/* <div className='externalConnection'>
                 <div style={{ display: "flex", justifyContent: "flex-start", alignItems: "center", marginTop: "20px", marginLeft: "24px", gap: "5px" }}>
                     <span style={{ fontSize: '14px', fontWeight: "600", color: "#FFFFFF" }}>Remote Connection Code</span>
                     <div id={(generatereconnectingStatus && externalConnectionConnectionEstablished) && 'blink'} style={{ marginTop: "3px", height: "11px", width: "11px", borderRadius: "50%", backgroundColor: externalConnectionConnectionEstablished === 0 ? "transparent" : "#3EDB57" }}></div>
@@ -269,8 +269,8 @@ function PreviewXOutput() {
 
                     }
                 </div>
-            </div>
-            
+            </div> */}
+
         </div>
     );
 }

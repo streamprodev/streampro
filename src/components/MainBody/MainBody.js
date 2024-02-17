@@ -36,6 +36,7 @@ import { usePreviewXOutput } from '../../context/PreviewXOutputContext';
 import { useBible } from '../../context/BibleContext';
 import AllSongs from './SongBody/AllSongs';
 import UpdateDownloadingModal from '../UpdateDownloadingModal';
+import EWGraberBody from './EWGraberBody/EWGraberBody';
 const { ipcRenderer } = window.require('electron');
 
 function MainBody() {
@@ -216,6 +217,8 @@ function MainBody() {
                         <Route index path="/song" element={<SongBody />} />
                         <Route path="/bible" element={<BibleBody />} />
                         <Route path="/all-song" element={<AllSongs />} />
+                        <Route path="/ew-graber" element={<EWGraberBody />} />
+                        <Route path="/sp-control" element={<AllSongs />} />
                         {/* <Route path="*" element={<NoPage />} /> */}
                     </Routes>
                     {/* <SongBody /> */}

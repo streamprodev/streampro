@@ -93,9 +93,9 @@ function BookmarkXSongs() {
 
                 </div>
                 <div style={{ position: "sticky", top: 0, background: "#15181C", alignItems: "center", fontSize: "14px", display: "flex", flexDirection: "row", justifyContent: "space-between", paddingRight: "24px", gap: "50px" }}>
-                    <div className='' style={{}}>
+                    <div className='' style={{ position: 'relative' }}>
                         <input type="text" placeholder="Search songs" className="search-input" onKeyUp={handleKeyPress} onChange={(event) => setSearchTerm(event.target.value)} value={searchTerm} />
-                        <SearchNormal className="search-icon" size={20} />
+                        <SearchNormal className="search-icon" size={20} style={{ position: 'absolute', top: '50%', right: '-20', transform: 'translateY(-50%)' }} />
                     </div>
                     {/* <p className="AddNew" style={{ fontWeight: "600", fontSize: "14px", background: "#15181C", textAlign: "center", cursor: 'pointer', color: "#FF3939" }} onClick={() => openModal()}>Add New</p> */}
                     <div style={{ display: "flex", justifyContent: "space-between", flex: 1, marginLeft: "0px" }}>

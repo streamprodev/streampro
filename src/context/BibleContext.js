@@ -586,6 +586,19 @@ export function BibleContextProvider({ children }) {
         }
     }
 
+    useEffect(() => {
+        if (bookmarkRef.current) {
+            bookmarkRef.current.scrollTo({
+                top: bookmarkRef.current.scrollHeight,
+                behavior: 'smooth',
+            })
+
+        }
+
+
+    }, [bookmarkView, historyData])
+
+
 
 
     useEffect(() => {
@@ -624,7 +637,7 @@ export function BibleContextProvider({ children }) {
 
 
     return (
-        <BibleContext.Provider value={{ inputType, setinputType, searchBook, setsearchBook, books, chapters, NewTestamentBooks, OldTestamentBooks, bibleView, setbibleView, selectedBook, setselectedBook, selectedChapter, setselectedChapter, activeChapterContent, setactiveChapterContent, setChapterContent, selectActiveVersion, searchChapter, setsearchChapter, searchVerse, setsearchVerse, searchBookObj, setsearchBookObj, searchChapterObj, setsearchChapterObj, searchBookTemp, setsearchBookTemp, showSelectVersionMenu, setshowSelectVersionMenu, showSelectVersionMenuPosition, setshowSelectVersionMenuPosition, setselectActiveVersion, selectActiveVersionName, handleKeyPress, searchTerm, setSearchTerm, searchData, setsearchData, detectKeyDown, selectedVerseArray, setselectedVerseArray, contentChapterRef, bookmarkopen, setbookmarkOPen, bookmarkedData, setbookmarkedData, addBookmark, deleteBookmark, inputBookRef, activeBook, bookmarkRef, inputVerseRef, showOneLine, setshowOneLine, showHilighted, setshowHilighted, expandedView, setexpandedView, searchResultRef, setsearchResultRef, multipleselectedVerseArray, setmultipleselectedVerseArray, getVerseText, showBookmarkContext, setshowBookmarkContext, selectedLine, setselectedLine, showAllSearch, setshowAllSearch, bookmarkView, setbookmarkView, historyData, sethistoryData }}>
+        <BibleContext.Provider value={{ inputType, setinputType, searchBook, setsearchBook, books, chapters, NewTestamentBooks, OldTestamentBooks, bibleView, setbibleView, selectedBook, setselectedBook, selectedChapter, setselectedChapter, activeChapterContent, setactiveChapterContent, setChapterContent, selectActiveVersion, searchChapter, setsearchChapter, searchVerse, setsearchVerse, searchBookObj, setsearchBookObj, searchChapterObj, setsearchChapterObj, searchBookTemp, setsearchBookTemp, showSelectVersionMenu, setshowSelectVersionMenu, showSelectVersionMenuPosition, setshowSelectVersionMenuPosition, setselectActiveVersion, selectActiveVersionName, handleKeyPress, searchTerm, setSearchTerm, searchData, setsearchData, detectKeyDown, selectedVerseArray, setselectedVerseArray, contentChapterRef, bookmarkopen, setbookmarkOPen, bookmarkedData, setbookmarkedData, addBookmark, deleteBookmark, inputBookRef, activeBook, bookmarkRef, inputVerseRef, showOneLine, setshowOneLine, showHilighted, setshowHilighted, expandedView, setexpandedView, searchResultRef, setsearchResultRef, multipleselectedVerseArray, setmultipleselectedVerseArray, getVerseText, showBookmarkContext, setshowBookmarkContext, selectedLine, setselectedLine, showAllSearch, setshowAllSearch, bookmarkView, setbookmarkView, historyData, sethistoryData, deleteHistory }}>
             {children}
         </BibleContext.Provider>
     )

@@ -159,6 +159,20 @@
   gap:24px;
   margin-Right:24px;
 }
+
+.ImageOutputXGrabPanel {
+  /* background-color: #b5194d; */
+  /* max-height: 100%; */
+  width: 545px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  font-size: calc(10px + 2vmin);
+  color: white;
+  gap:24px;
+  margin-Right:24px;
+}
+
 .bookmarkXbooks {
   /* background-color: #b5194d; */
   /* max-height: 100%; */
@@ -205,6 +219,20 @@
   background-color: #15181C;
   height: 100%;
   width: 620px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  font-size: calc(10px + 2vmin);
+  color: white;
+  gap:24px;
+  border-radius: 4px;
+  margin-Right:24px;
+}
+
+.controlBoard {
+  background-color: #15181C;
+  height: 100%;
+  width: 470px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
