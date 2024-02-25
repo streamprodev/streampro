@@ -10,29 +10,46 @@ import { initializeApp } from "firebase/app"
 import { getDocs, collection, query, where, getFirestore } from "@firebase/firestore"
 import { usePreviewXOutput } from '../context/PreviewXOutputContext';
 import { useRegistrationInfo } from '../context/RegistrationInfoContext';
+import SelectVmixInput from './SelectVmixInput';
 
 const { ipcRenderer } = window.require('electron');
 
 const ConnectNowModal = () => {
 
+    useEffect(() => {
+        ipcRenderer.on('getConnectionUrlData', getConnectionUrlData)
+
+        return () => {
+            ipcRenderer.removeListener('getConnectionUrlData', getConnectionUrlData);
+        }
+    }, []);
 
 
     const { registrationInfo, firestore } = useRegistrationInfo();
-    const { isConnectNowModalOpen, closeConnectNowModal, outputUrl, setoutputUrl, outputPasscode, setoutputPasscode, outputConnectionSoftware, setoutputConnectionSoftware, outputConnectionEstablished, setoutputConnectionEstablished, setisLive } = usePreviewXOutput();
+    const { isConnectNowModalOpen, closeConnectNowModal, outputUrl, setoutputUrl, outputPasscode, setoutputPasscode, outputConnectionSoftware, setoutputConnectionSoftware, outputConnectionEstablished, setoutputConnectionEstablished, setisLive, selectedVmixInputKey, setselectedVmixInputKey } = usePreviewXOutput();
 
     const [page, setPage] = useState(1)
     // const [streamingPlatform, setStreamingPlatform] = useState('')
     const [connectionMode, setconnectionMode] = useState('')
 
+    const seletInputNumber = () => {
+        //seleck key
+        setPage(1)
+        // setoutputConnectionSoftware('')
+        // setconnectionMode('')
+        closeConnectNowModal()
+    }
 
 
     useEffect(() => {
         if (outputConnectionEstablished === 1) {
             setTimeout(() => {
-                setPage(1)
-                // setoutputConnectionSoftware('')
-                // setconnectionMode('')
-                closeConnectNowModal()
+                // setPage(1)
+                // // setoutputConnectionSoftware('')
+                // // setconnectionMode('')
+                // closeConnectNowModal()
+
+                setPage(5)
 
             }, 1500);
         }
@@ -58,7 +75,12 @@ const ConnectNowModal = () => {
     const updateStreamingPlatform = (platform) => {
 
         setoutputConnectionSoftware(platform)
-        setPage(2)
+        // setPage(2)
+
+        setconnectionMode('remote')
+        setoutputPasscode('')
+        setoutputUrl('')
+        setPage(3)
     }
     const updateConnectionMode = (mode) => {
         setconnectionMode(mode)
@@ -73,7 +95,8 @@ const ConnectNowModal = () => {
     }
     const updateRemoteConnectionDetails = () => {
         setPage(4)
-        establishConnection()
+        establishConnectionNew()
+        // establishConnection()
     }
 
     const establishConnection = async (local = null) => {
@@ -152,11 +175,91 @@ const ConnectNowModal = () => {
         // }, 2500);
     }
 
+    const getConnectionUrlData = async (event, data) => {
+        console.log(data)
+        var url = outputUrl;
+        if (data.row && data.row != undefined) {
+            url = data.row.url
+            setoutputUrl(data.row.url)
+        } else {
+
+            const firebaseConfig = {
+                apiKey: registrationInfo.firestore_apikey,
+                projectId: registrationInfo.firestore_projectid,
+                appId: registrationInfo.firestore_appid,
+            };
+
+            // Initialize Firebase
+            const firestore = getFirestore(initializeApp(firebaseConfig, new Date().toJSON()))
+
+            const collection_ref = collection(firestore, 'Remote Connections')
+            const q = query(collection_ref, where("password", "==", outputPasscode))
+            const doc_refs = await getDocs(q);
+            const res = []
+
+            doc_refs.forEach(country => {
+                res.push({
+                    id: country.id,
+                    ...country.data()
+                })
+            })
+
+            if (res.length > 0) {
+                const initial = res[0];
+                url = initial.url
+                setoutputUrl(url)
+            }
+
+        }
+        console.log({ outputPasscode, outputUrl: url });
+
+        try {
+            ipcRenderer.invoke('connectVmix', { outputPasscode, outputUrl: url })
+                .then(res => {
+                    setoutputConnectionEstablished(1)
+
+
+                })
+                .catch(err => {
+                    console.log(err)
+                    setTimeout(() => {
+                        closeConnectNowModal()
+                        setPage(1)
+
+                    }, 3000);
+                    toast(<LowerToast status={'error'} message={"Error connecting to existing server"} />, {
+                        position: "bottom-center",
+                        autoClose: 3000,
+                        hideProgressBar: true,
+                        closeOnClick: true,
+                        pauseOnHover: true,
+                        draggable: true,
+                        progress: undefined,
+                        theme: "light",
+                        style: { width: "500px", backgroundColor: "#FF3939", textAlign: "left", height: "10px", margin: "auto" }
+                    });
+                })
+        } catch (error) {
+            console.log(error)
+        }
+
+    }
+
+    const establishConnectionNew = async (local = null) => {
+        console.log(outputPasscode);
+        ipcRenderer.invoke('checkLocalConnection', outputPasscode).then(res => {
+            console.log(res)
+        });
+
+        return 'response';
+    }
+
     const onClickBack = () => {
         if (page === 2) {
             setPage(1)
         } else if (page === 3) {
-            setPage(2)
+            // setPage(2)
+            setPage(1)
         }
 
     }
@@ -182,6 +285,9 @@ const ConnectNowModal = () => {
 
                         {
                             page === 4 && <EstablishingConnection onClick={updateConnectionMode} outputConnectionEstablished={outputConnectionEstablished} />
+                        }
+                        {
+                            page === 5 && <SelectVmixInput setselectedVmixInputKey={setselectedVmixInputKey} onClick={seletInputNumber} />
                         }
                     </div>
 

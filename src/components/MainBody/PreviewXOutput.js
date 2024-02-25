@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
 import SideBar from '../SideBar';
 import CreateSongModal from '../CreateSongModal';
-import { Copy, Edit2, ProfileCircle, SearchNormal, Setting2, ArrowDown2, ArrowUp2 } from 'iconsax-react';
+import { Copy, Edit2, ProfileCircle, SearchNormal, Setting2, ArrowDown2, ArrowUp2, ArrowCircleLeft } from 'iconsax-react';
 import ImportSongsModal from '../ImportSongsModal';
 import SongListItem from '../SongListItem';
 import MiniSearch from 'minisearch'
@@ -24,6 +24,8 @@ import { usePreviewXOutput } from '../../context/PreviewXOutputContext';
 import { useSong } from '../../context/SongContext';
 import { useLocation } from 'react-router-dom';
 import { useBible } from '../../context/BibleContext';
+import { Carousel } from 'react-responsive-carousel';
+import "react-responsive-carousel/lib/styles/carousel.min.css";
 const { ipcRenderer } = window.require('electron');
 
 function PreviewXOutput() {
@@ -32,6 +34,8 @@ function PreviewXOutput() {
 
 
 
+    const [currentBibleOutputIndex, setCurrentBibleOutputIndex] = useState(0);
+    const [currentSongOutputIndex, setCurrentSongOutputIndex] = useState(0);
     // const [outPutType, setoutPutType] = useState('song');
     const {
         outputLine, setoutputLine, setngrokUrlError, ngrokStatus, setngrokStatus, outputOptionsPosition, setoutputOptionsPosition, showoutputOptions, setshowoutputOptions, isLive, setisLive, externalConnectionConnectionEstablished, setexternalConnectionConnectionEstablished, externalConnectionPasscode, setexternalConnectionPasscode, externalConnectionUrl, setexternalConnectionUrl, outputConnectionEstablished, setoutputConnectionEstablished, outputConnectionSoftware, setoutputConnectionSoftware, outputPasscode, setoutputPasscode, outputUrl, setoutputUrl, finaloutputLine, setfinaloutputLine, seconds, minutes, hours, days, isRunning, start, pause, reset, copiedToaster, vmixDisconected, isConnectNowModalOpen, setIsConnectNowModalOpen, isGenerateURLModalOpen, setisGenerateURLModalOpen, outputOptionsRef, handleShowOutputOption, reconnectingStatus, setreconnectingStatus, generatereconnectingStatus, setgeneratereconnectingStatus } = usePreviewXOutput();
@@ -171,8 +175,8 @@ function PreviewXOutput() {
 
                 </div>
                 <div style={{ paddingLeft: "24px", paddingRight: "24px", textAlign: "left", flex: 1, alignItems: 'flex-start', display: "flex", flexDirection: "column", gap: "10px" }}>
-                    {(location.pathname == "/main/bible" && outputLine) && <span style={{ listStyleType: "none", fontSize: '14px', fontWeight: "500", color: "#B1B1B1", cursor: "pointer", textAlign: "left" }} onClick={() => { }}>{multipleselectedVerseArray.length > 0 ? getVerseText(multipleselectedVerseArray).ref : selectedVerseArray?.book_name + " " + selectedVerseArray?.chapter_number + ":" + selectedVerseArray?.verse_number + " (" + selectActiveVersion.toUpperCase() + ")"} </span>}
-                    {outputLine && <span style={{ fontSize: '14px', fontWeight: "600", color: "#B1B1B1", lineHeight: "1.3" }}>{location.pathname == "/main/bible" ? (multipleselectedVerseArray.length > 0 ? getVerseText(multipleselectedVerseArray).text : selectedVerseArray?.text) : outputLine} </span>}
+                    {((location.pathname == "/main/bible" || location.pathname == "/main/ew-graber") && outputLine) && <span style={{ listStyleType: "none", fontSize: '14px', fontWeight: "500", color: "#B1B1B1", cursor: "pointer", textAlign: "left" }} onClick={() => { }}>{multipleselectedVerseArray.length > 0 ? getVerseText(multipleselectedVerseArray).ref : selectedVerseArray?.book_name + " " + selectedVerseArray?.chapter_number + ":" + selectedVerseArray?.verse_number + " (" + selectActiveVersion.toUpperCase() + ")"} </span>}
+                    {outputLine && <span style={{ fontSize: '14px', fontWeight: "600", color: "#B1B1B1", lineHeight: "1.3" }}>{(location.pathname == "/main/bible" || location.pathname == "/main/ew-graber") ? (multipleselectedVerseArray.length > 0 ? getVerseText(multipleselectedVerseArray).text : selectedVerseArray?.text) : outputLine} </span>}
                 </div>
                 <div style={{ flex: 1 }}></div>
             </div>
@@ -202,7 +206,7 @@ function PreviewXOutput() {
                     finaloutputLine &&
                     <div style={{ paddingLeft: "24px", paddingRight: "24px", textAlign: "left", alignItems: "flex-start", display: 'flex', flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-start", gap: "10px", }}>
                         {(outPutType == 'bible' && finaloutputLine) && <span style={{ listStyleType: "none", fontSize: '14px', fontWeight: "500", color: "#FF3939", textAlign: "left" }} onClick={() => { }}>{multipleselectedVerseArray.length > 0 ? getVerseText(multipleselectedVerseArray).ref : selectedVerseArray?.book_name + " " + selectedVerseArray?.chapter_number + ":" + selectedVerseArray?.verse_number + " (" + selectActiveVersion.toUpperCase() + ")"} </span>}
-                        {finaloutputLine && <span style={{ fontSize: '14px', fontWeight: "600", color: "#FF3939", lineHeight: "1.3" }}>{location.pathname == "/main/bible" ? multipleselectedVerseArray.length > 0 ? getVerseText(multipleselectedVerseArray).text : selectedVerseArray?.text : finaloutputLine} </span>}
+                        {finaloutputLine && <span style={{ fontSize: '14px', fontWeight: "600", color: "#FF3939", lineHeight: "1.3" }}>{(location.pathname == "/main/bible" || location.pathname == "/main/ew-graber") ? multipleselectedVerseArray.length > 0 ? getVerseText(multipleselectedVerseArray).text : selectedVerseArray?.text : finaloutputLine} </span>}
                     </div>
                 }
 
@@ -232,6 +236,25 @@ function PreviewXOutput() {
                     </div>
                 )}
             </div>
+
+            {/* <Carousel
+                renderArrowPrev={() => <ArrowCircleLeft
+                    onClick={() => {
+                        currentBibleOutputIndex > 0 ?? setCurrentBibleOutputIndex(currentBibleOutputIndex - 1)
+                    }}
+                    size={14}
+                    style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer' }}
+                />}
+                selectedItem={currentBibleOutputIndex}
+                onChange={(i) => setCurrentBibleOutputIndex(i)}
+            >
+                <div key="slide1" style={{ padding: 20, height: 150 }}>
+                    Text 01
+                </div>
+                <div key="slide2" style={{ padding: 20, height: 150 }}>
+                    Text 02
+                </div>
+            </Carousel> */}
 
             {/* <div className='externalConnection'>
                 <div style={{ display: "flex", justifyContent: "flex-start", alignItems: "center", marginTop: "20px", marginLeft: "24px", gap: "5px" }}>

@@ -61,6 +61,7 @@ var bearer_token = '2S8k9KqD12kvPVeT5CxUacNymrv_7TXuGa24NwpgxuiyAmLd6';//api key
 var session_id;
 var update_found;
 var isEwGrabberActive = false
+var active_display = ''
 
 autoUpdater.autoDownload = false;
 autoUpdater.autoInstallOnAppQuit = true;
@@ -144,6 +145,25 @@ ipcMain.handle('readFile', async (event, filePath) => {
         console.error('Error reading file:', error);
         return null; // or handle the error in an appropriate way
     }
+});
+
+
+
+ipcMain.handle('checkLocalConnection', (event, passcode) => {
+    db.get('select * from local_connections where passcode = ? limit 1', [
+        passcode
+    ], (err, row) => {
+        console.log(row)
+        event.sender.send('getConnectionUrlData', { row, err });
+        return [row, err];
+        if (err) {
+            return err
+        } else {
+            console.log(row)
+            return row;
+        }
+    });
+
 });
 
 const updateReconnectingStatus = (event, status) => {
@@ -1136,7 +1156,115 @@ const closeNgrokSession = (event, message) => {
     }
 }
 
-ipcMain.on('setngrok', async (event, registration_info) => {
+ipcMain.on('createConnection', async (event, registration_info, enableExternalConnection = false) => {
+
+    password = generateRandom()
+    url = 'http://127.0.0.1:8088'
+
+    db.run('INSERT INTO local_connections (url, passcode,created,updated,uuid) VALUES (?, ?,?, ?,?)', [
+        url,
+        password,
+        new Date().toJSON(),
+        new Date().toJSON(),
+        uuidv4()
+    ], (err) => {
+        console.log(err)
+    });
+
+    if (enableExternalConnection) {
+        bearer_token = registration_info.ngrok_bearertoken;
+        auth_token = registration_info.ngrok_key;
+        try {
+            const online_sessions = await fetch('https://api.ngrok.com/tunnel_sessions', {
+                method: 'GET',
+                headers: {
+                    "Authorization": 'Bearer ' + bearer_token,
+                    "Ngrok-Version": "2",
+                    "Content-Type": "application/json",
+                }
+            })
+            const online_session = await online_sessions.json();
+
+            if (online_session.tunnel_sessions && online_session.tunnel_sessions.length > 0) {
+                session_id = online_session.tunnel_sessions[0].id
+
+                if (session) {
+
+                    console.log('Session exists locally, so going ahead to establish a tunnel');
+                    const tunnel = await session.httpEndpoint().basicAuth(password + "STP", password + "STP").listen();
+                    const url = tunnel.url()
+                    tunnel.forwardTcp('127.0.0.1:' + port)
+                    console.log("tunnel established at:", url);
+                    event.reply('setngrokUrl', { url, password, registration_info });
+                    checkIfGeneratedLinkActiv(event, { outputUrl: url, outputPasscode: password })
+                } else {
+                    console.log('Session does not exist locally, so asking for already existing session to close');
+
+                    await fetch('https://api.ngrok.com/tunnel_sessions/' + session_id + '/stop', {
+                        method: 'POST',
+                        headers: {
+                            "Authorization": 'Bearer ' + registration_info.ngrok_bearertoken,
+                            "Ngrok-Version": "2",
+                            "Content-Type": "application/json",
+                        },
+                        body: '{}'
+                    })
+                    // await closesessions.json();
+
+                    console.log('Existing session closed');
+                    // password = generateRandom()
+                    setTimeout(async () => {
+                        session = await new ngrok.NgrokSessionBuilder().authtoken(auth_token).handleStopCommand(() => {
+                            closeNgrokSession(event, 'Received request to stop session')
+                            console.log('received request to stop session')
+                            console.log('session closed')
+                        })
+                            .connect();
+                        const tunnel = await session.httpEndpoint().basicAuth(password + "STP", password + "STP").listen();
+                        const url = tunnel.url()
+                        tunnel.forwardTcp('127.0.0.1:' + port)
+                        console.log("tunnel established at:", url);
+                        event.reply('setngrokUrl', { url, password, registration_info });
+                        checkIfGeneratedLinkActiv(event, { outputUrl: url, outputPasscode: password })
+
+                    }, 20000);
+
+
+                }
+            } else {
+                console.log('no active agent/session on the account, would create one')
+                //create session and tunnel
+                // password = generateRandom()
+                session = await new ngrok.NgrokSessionBuilder().authtoken(auth_token).handleStopCommand(() => {
+                    closeNgrokSession(event, 'Received request to stop session')
+                    // event.reply('setngrokUrlError', 'session setup error: received request to stop session');
+                    console.log('received request to stop session')
+                    // session.close();
+                    console.log('session closed')
+                })
+                    .connect();
+                const tunnel = await session.httpEndpoint().basicAuth(password + "STP", password + "STP").listen();
+                const url = tunnel.url()
+                tunnel.forwardTcp('127.0.0.1:' + port)
+                console.log("tunnel established at:", url);
+                event.reply('setngrokUrl', { url, password, registration_info });
+                checkIfGeneratedLinkActiv(event, { outputUrl: url, outputPasscode: password })
+
+            }
+
+        } catch (error) {
+            console.log(error)
+            event.reply('setngrokUrlError', 'Error Generating Code.');
+        }
+
+    } else {
+        event.reply('setngrokUrl', { url, password, registration_info });
+    }
+
+});
+
+ipcMain.on('setngrok', async (event, registration_info, enableExternalConnection = 0) => {
+    console.log(enableExternalConnection, 'enableExternalConnection')
     bearer_token = registration_info.ngrok_bearertoken;
     auth_token = registration_info.ngrok_key;
     try {
@@ -1237,6 +1365,23 @@ ipcMain.on('minimize', () => {
 });
 
 ipcMain.on('close', () => {
+    isEwGrabberActive = false;
+    var pat = __dirname + "/virtual_monitor_installer/remove_screen.bat";
+    var pat = path.join(app.getPath('documents'), 'StreamPro/virtual_monitor_installer/remove_screen.bat')
+    console.log("Current directory:", pat);
+
+    exec(pat, (error, stdout, stderr) => {
+
+        if (error) {
+            console.error(`error: ${error.message}`);
+            return;
+        }
+        if (stderr) {
+            console.error(`stderr: ${stderr}`);
+            return;
+        }
+        console.log(`stdout:\n${stdout}`);
+    })
     win.close();
 });
 ipcMain.on('saveRegistrationInfo', async (event, registration_info) => {
@@ -1277,31 +1422,83 @@ ipcMain.on('saveRegistrationInfo', async (event, registration_info) => {
     });
 });
 
-ipcMain.on("activateEwGrabber", function (event, arg) {
+ipcMain.on("activateEwGrabber", async function (event, arg) {
 
+    isEwGrabberActive = true;
 
-
-    var pat = __dirname + "/virtual_monitor_installer/check_installation.bat";
+    const initial_display_count = await getScreenCount();
+    var pat = path.join(app.getPath('documents'), 'StreamPro/virtual_monitor_installer/usbmmidd.bat')
+    // var pat = __dirname + "/virtual_monitor_installer/usbmmidd.bat";
+    // var pat = __dirname + "/resources/virtual_monitor_installer/usbmmidd.bat";
+    // var pat = __dirname + "../../virtual_monitor_installer/usbmmidd.bat";
     console.log("Current directory:", pat);
+    event.sender.send("grabber-finished", pat);
 
-    // exec(pat, (error, stdout, stderr) => {
+    exec(`"${pat}"`, (error, stdout, stderr) => {
 
-    //     if (error) {
-    //         console.error(`error: ${error.message}`);
-    //         return;
-    //     }
-    //     if (stderr) {
-    //         console.error(`stderr: ${stderr}`);
-    //         return;
-    //     }
-    //     console.log(`stdout:\n${stdout}`);
-    // })
+        if (error) {
+            event.sender.send("grabber-finished-test", error);
+            console.error(`error: ${error.message}`);
+            return;
+        }
+        if (stderr) {
+            event.sender.send("grabber-finished-test", stderr);
+            console.error(`stderr: ${stderr}`);
+            return;
+        }
+        event.sender.send("grabber-finished-test", stdout);
+        console.log(`stdout:\n${stdout}`);
+    })
 
+    var firstDate = new Date();
+    console.log(new Date().toLocaleTimeString());
 
-    setImmediate(function A() {
-        getEasyWorshipOutput(event);
+    while (await getScreenCount() <= initial_display_count) {
+    }
+
+    setTimeout(() => {
+        screenshot.listDisplays().then((displays) => {
+            console.log("about to show displays")
+            console.log(new Date().toLocaleTimeString());
+            console.log(displays);
+            active_display = displays[displays.length - 1].name;
+
+        });
+
+    }, 3000);
+
+    // while 
+    setImmediate(function A(active_display) {
+        getEasyWorshipOutput(event, active_display);
     });
 
+
+
+});
+
+async function getScreenCount() {
+    const displays = await screenshot.listDisplays();
+    return displays.length;
+}
+
+ipcMain.on("deactivateEwGrabber", function (event, arg) {
+    isEwGrabberActive = false;
+    var pat = __dirname + "/virtual_monitor_installer/remove_screen.bat";
+    var pat = path.join(app.getPath('documents'), 'StreamPro/virtual_monitor_installer/remove_screen.bat')
+    console.log("Current directory:", pat);
+
+    exec(pat, (error, stdout, stderr) => {
+
+        if (error) {
+            console.error(`error: ${error.message}`);
+            return;
+        }
+        if (stderr) {
+            console.error(`stderr: ${stderr}`);
+            return;
+        }
+        console.log(`stdout:\n${stdout}`);
+    })
 });
 
 
@@ -1335,6 +1532,23 @@ async function createWindow() {
 
     // win.electron.ipcRenderer.sendMessage('ipc-example', ['ping']);
     app.on('window-all-closed', () => {
+        isEwGrabberActive = false;
+        var pat = __dirname + "/virtual_monitor_installer/remove_screen.bat";
+        var pat = path.join(app.getPath('documents'), 'StreamPro/virtual_monitor_installer/remove_screen.bat')
+        console.log("Current directory:", pat);
+
+        exec(pat, (error, stdout, stderr) => {
+
+            if (error) {
+                console.error(`error: ${error.message}`);
+                return;
+            }
+            if (stderr) {
+                console.error(`stderr: ${stderr}`);
+                return;
+            }
+            console.log(`stdout:\n${stdout}`);
+        })
         if (process.platform !== 'darwin') {
             app.quit()
         }
@@ -1395,6 +1609,24 @@ autoUpdater.on("error", (info) => {
 
 
 app.on('window-all-closed', () => {
+
+    isEwGrabberActive = false;
+    var pat = __dirname + "/virtual_monitor_installer/remove_screen.bat";
+    var pat = path.join(app.getPath('documents'), 'StreamPro/virtual_monitor_installer/remove_screen.bat')
+    console.log("Current directory:", pat);
+
+    exec(pat, (error, stdout, stderr) => {
+
+        if (error) {
+            console.error(`error: ${error.message}`);
+            return;
+        }
+        if (stderr) {
+            console.error(`stderr: ${stderr}`);
+            return;
+        }
+        console.log(`stdout:\n${stdout}`);
+    })
     if (process.platform !== 'darwin') {
         app.quit()
     }
@@ -1614,35 +1846,36 @@ function watchSnapshot() {
     })
 }
 
-function getEasyWorshipOutput(event) {
+function getEasyWorshipOutput(event, active_display) {
     //console.log("in main process")
-    isEwGrabberActive = true;
-    var firstDate = new Date();
-    console.log(new Date().toLocaleTimeString());
-
-    // screenshot.listDisplays().then((displays) => {
-    //     console.log("about to show displays")
-    //     console.log(new Date().toLocaleTimeString());
-    //     console.log(displays);
-
-    // });
+    if (!isEwGrabberActive) {
+        return;
+    }
 
 
-    screenshot({ screen: '\\\\.\\DISPLAY4' }).then((img) => {
+    screenshot.listDisplays().then((displays) => {
+
+        event.sender.send("grabber-finished-screen", displays);
+        active_display = displays[displays.length - 1].name;
+        console.log(active_display);
+
+    });
+
+    screenshot({ screen: active_display }).then((img) => {
         (async () => {
-            if (!isEwGrabberActive) {
-                return;
-            }
+
+
+
             // console.log(img);
             event.sender.send("grabber-finished-image", img);
             const compressedImage = await sharp(img).webp({ quality: 1 }).resize({ width: 300 }).toBuffer();
             const worker = global.shared.worker;
             const { data: { text } } = await worker.recognize(compressedImage);
-            console.log(new Date().getTime() - firstDate.getTime());
+            // console.log(new Date().getTime() - firstDate.getTime());
             console.log(text);
             event.sender.send("grabber-finished", text);
             setImmediate(function A() {
-                getEasyWorshipOutput(event);
+                getEasyWorshipOutput(event, active_display);
             });
         })();
     });

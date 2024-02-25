@@ -18,6 +18,8 @@ exports.inititateDB = async () => {
 
     db.run(("CREATE TABLE IF NOT EXISTS songs (id INTEGER PRIMARY KEY,uuid TEXT, title TEXT, body TEXT,  created TIMESTAMP, updated TIMESTAMP default current_timestamp )"));
 
+    db.run(("CREATE TABLE IF NOT EXISTS local_connections (id INTEGER PRIMARY KEY,uuid TEXT, url TEXT, passcode TEXT,  created TIMESTAMP, updated TIMESTAMP default current_timestamp )"));
+
     db.run(("CREATE TABLE IF NOT EXISTS registration_info (id INTEGER PRIMARY KEY,uuid TEXT, license_key TEXT, license_owner TEXT, license_owner_email TEXT,ngrok_key TEXT,ngrok_bearertoken TEXT,device_id TEXT,device_name TEXT,firestore_apikey TEXT TEXT,firestore_projectid TEXT,firestore_appid TEXT,last_sync_date timestamp, documentid TEXT,auto_sync TEXT default 0, created TIMESTAMP, updated TIMESTAMP  default current_timestamp)"));
 
     var exec = require('child_process').exec;
@@ -52,6 +54,16 @@ exports.inititateDB = async () => {
         if (err) throw err;
         console.log('File was copied to destination');
     });
+
+
+    destDir = path.join(app.getPath('documents'), 'StreamPro/virtual_monitor_installer');
+    if (!fs.existsSync(destDir)) {
+        fs.mkdirSync(destDir, { recursive: true });
+        fse.copy('resources/virtual_monitor_installer', destDir, (err) => {
+            if (err) throw err;
+            console.log('File was copied to destination');
+        });
+    }
 
     setTimeout(() => {
         db.run(("CREATE UNIQUE INDEX IF NOT EXISTS idx_songs_uuid ON songs(uuid)"));

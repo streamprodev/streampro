@@ -13,13 +13,14 @@ export function EwGrabberContextProvider({ children }) {
     const [isEwGrabberConnected, setIsEwGrabberConnected] = useState(false)
     const [ewGrabbedText, setEwGrabberText] = useState("")
     const [ewGrabbedImage, setEwGrabberImage] = useState("")
+    const [ewGrabbedScreen, setEwGrabberScreen] = useState("")
 
 
 
 
 
     return (
-        <EwGrabberContext.Provider value={{ isEwGrabberConnected, setIsEwGrabberConnected, ewGrabbedText, setEwGrabberText, ewGrabbedImage, setEwGrabberImage }}>
+        <EwGrabberContext.Provider value={{ isEwGrabberConnected, setIsEwGrabberConnected, ewGrabbedText, setEwGrabberText, ewGrabbedImage, setEwGrabberImage, ewGrabbedScreen, setEwGrabberScreen }}>
             {children}
         </EwGrabberContext.Provider>
     )

@@ -51,6 +51,23 @@ export function PreviewXOutputContextProvider({ children }) {
     const [reconnectingStatus, setreconnectingStatus] = useState(false)
     const [generatereconnectingStatus, setgeneratereconnectingStatus] = useState(false)
 
+    const [selectedVmixInputKey, setselectedVmixInputKey] = useState('');
+
+    const [isVmixStarted, setIsVmixStarted] = React.useState(false)
+    const [isObsStarted, setIsObsStarted] = React.useState(false)
+    const [isLightstreamStarted, setIsLightstreamStarted] = React.useState(false)
+    const [isXsplitStarted, setIsXsplitStarted] = React.useState(false)
+
+    const [isVmixExternalConnectionEnabled, setIsVmixExternalConnectionEnabled] = React.useState(false)
+    const [isObsExternalConnectionEnabled, setIsObsExternalConnectionEnabled] = React.useState(false)
+    const [isLightstreamExternalConnectionEnabled, setIsLightstreamExternalConnectionEnabled] = React.useState(false)
+    const [isXsplitExternalConnectionEnabled, setIsXsplitExternalConnectionEnabled] = React.useState(false)
+
+    const [bibleConnections, setbibleConnections] = useState([]);
+    const [songConnections, setsongConnections] = useState([]);
+
+
+
     const location = useLocation();
     const { selectedBook, setselectedBook, selectedChapter, setselectedChapter, searchVerse, selectedVerseArray, selectActiveVersion, multipleselectedVerseArray, setmultipleselectedVerseArray, getVerseText } = useBible()
 
@@ -127,8 +144,8 @@ export function PreviewXOutputContextProvider({ children }) {
 
     useEffect(() => {
         if (outputConnectionEstablished) {
+            console.log('here');
             if (location.pathname == '/main/bible' || location.pathname == '/main/ew-graber') {
-
                 setTimeout(() => {
                     // delete selectedVerseArray['ref'];
 
@@ -298,9 +315,10 @@ export function PreviewXOutputContextProvider({ children }) {
         }
 
         setexternalConnectionConnectionEstablished(1)
+        setIsVmixStarted(true)
         setexternalConnectionUrl(contents.url)
         setexternalConnectionPasscode(contents.password)
-        start()
+        // start()
         setngrokUrlError('')
 
 
@@ -370,7 +388,7 @@ export function PreviewXOutputContextProvider({ children }) {
 
     return (
         <PreviewXOutputContext.Provider value={{
-            ngrokUrlError, setngrokUrlError, ngrokStatus, setngrokStatus, outputOptionsPosition, setoutputOptionsPosition, showoutputOptions, setshowoutputOptions, isLive, setisLive, externalConnectionConnectionEstablished, setexternalConnectionConnectionEstablished, externalConnectionPasscode, setexternalConnectionPasscode, externalConnectionUrl, setexternalConnectionUrl, outputConnectionEstablished, setoutputConnectionEstablished, outputConnectionSoftware, setoutputConnectionSoftware, outputPasscode, setoutputPasscode, outputUrl, setoutputUrl, finaloutputLine, setfinaloutputLine, outputLine, setoutputLine, seconds, minutes, hours, days, isRunning, start, pause, reset, copiedToaster, vmixDisconected, isConnectNowModalOpen, setIsConnectNowModalOpen, isGenerateURLModalOpen, setisGenerateURLModalOpen, outputOptionsRef, handleShowOutputOption, closeConnectNowModal, closeGenerateURLModal, reconnectingStatus, setreconnectingStatus, generatereconnectingStatus, setgeneratereconnectingStatus
+            ngrokUrlError, setngrokUrlError, ngrokStatus, setngrokStatus, outputOptionsPosition, setoutputOptionsPosition, showoutputOptions, setshowoutputOptions, isLive, setisLive, externalConnectionConnectionEstablished, setexternalConnectionConnectionEstablished, externalConnectionPasscode, setexternalConnectionPasscode, externalConnectionUrl, setexternalConnectionUrl, outputConnectionEstablished, setoutputConnectionEstablished, outputConnectionSoftware, setoutputConnectionSoftware, outputPasscode, setoutputPasscode, outputUrl, setoutputUrl, finaloutputLine, setfinaloutputLine, outputLine, setoutputLine, seconds, minutes, hours, days, isRunning, start, pause, reset, copiedToaster, vmixDisconected, isConnectNowModalOpen, setIsConnectNowModalOpen, isGenerateURLModalOpen, setisGenerateURLModalOpen, outputOptionsRef, handleShowOutputOption, closeConnectNowModal, closeGenerateURLModal, reconnectingStatus, setreconnectingStatus, generatereconnectingStatus, setgeneratereconnectingStatus, selectedVmixInputKey, setselectedVmixInputKey, isVmixStarted, setIsVmixStarted, isObsStarted, setIsObsStarted, isLightstreamStarted, setIsLightstreamStarted, isXsplitStarted, setIsXsplitStarted, isVmixExternalConnectionEnabled, setIsVmixExternalConnectionEnabled, isObsExternalConnectionEnabled, setIsObsExternalConnectionEnabled, isLightstreamExternalConnectionEnabled, setIsLightstreamExternalConnectionEnabled, isXsplitExternalConnectionEnabled, setIsXsplitExternalConnectionEnabled, bibleConnections, setbibleConnections, songConnections, setsongConnections
         }}>
             {children}
         </PreviewXOutputContext.Provider>
