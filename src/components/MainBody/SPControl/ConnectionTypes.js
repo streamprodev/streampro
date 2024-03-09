@@ -23,7 +23,8 @@ const { ipcRenderer } = window.require('electron');
 function ConnectionTypes() {
 
     const { registrationInfo, firestore } = useRegistrationInfo();
-    const { setexternalConnectionConnectionEstablished, setexternalConnectionUrl, setexternalConnectionPasscode, externalConnectionPasscode, isVmixStarted, setIsVmixStarted, isObsStarted, setIsObsStarted, isLightstreamStarted, setIsLightstreamStarted, isXsplitStarted, setIsXsplitStarted, isVmixExternalConnectionEnabled, setIsVmixExternalConnectionEnabled, isObsExternalConnectionEnabled, setIsObsExternalConnectionEnabled, isLightstreamExternalConnectionEnabled, setIsLightstreamExternalConnectionEnabled, isXsplitExternalConnectionEnabled, setIsXsplitExternalConnectionEnabled } = usePreviewXOutput();
+    const { setexternalConnectionConnectionEstablished, setexternalConnectionUrl, setexternalConnectionPasscode, externalConnectionPasscode, isVmixStarted, setIsVmixStarted, isObsStarted, setIsObsStarted, isLightstreamStarted, setIsLightstreamStarted, isXsplitStarted, setIsXsplitStarted, isVmixExternalConnectionEnabled, setIsVmixExternalConnectionEnabled, isObsExternalConnectionEnabled, setIsObsExternalConnectionEnabled, isLightstreamExternalConnectionEnabled, setIsLightstreamExternalConnectionEnabled, isXsplitExternalConnectionEnabled, setIsXsplitExternalConnectionEnabled, copiedToaster, bibleConnections, setbibleConnections, setoutputConnectionEstablished, setisLive, setreconnectingStatus } = usePreviewXOutput();
+
 
     // const establishConnection = async (local = null) => {
 
@@ -127,6 +128,7 @@ function ConnectionTypes() {
                                     <div style={{ position: "absolute", top: 0, right: -20 }}>
                                         <Copy size="14" color="#FFFFFF" onClick={() => {
                                             navigator.clipboard.writeText(externalConnectionPasscode);
+                                            copiedToaster()
                                         }} style={{ cursor: "pointer" }} />
 
                                     </div>
@@ -148,15 +150,36 @@ function ConnectionTypes() {
                                     setIsVmixStarted(false)
                                     setexternalConnectionPasscode('')
                                     setexternalConnectionUrl('')
-                                    // pause()
                                     ipcRenderer.send('closengrok', 'Session closed successfully')
                                     setexternalConnectionConnectionEstablished(0)
+
+                                    const filteredConnections = bibleConnections.filter(x => x.outputPasscode != externalConnectionPasscode)
+                                    setbibleConnections(filteredConnections)
+                                    if (filteredConnections < 0) {
+                                        setoutputConnectionEstablished(0)
+                                        setisLive(false)
+                                        setreconnectingStatus(false)
+                                        ipcRenderer.send('stopOutputConnectionCheck', 'Session closed successfully')
+
+                                        toast(<LowerToast status={'success'} message={'Connection closed!'} />, {
+                                            position: "bottom-center",
+                                            autoClose: 2000,
+                                            hideProgressBar: true,
+                                            closeOnClick: true,
+                                            pauseOnHover: true,
+                                            draggable: true,
+                                            progress: undefined,
+                                            theme: "light",
+                                            style: { width: "500px", height: "20px", backgroundColor: "#A7FFB5", textAlign: "left" }
+                                        });
+
+                                    }
                                 } else {
                                     ipcRenderer.send('createConnection', registrationInfo, isVmixExternalConnectionEnabled)
                                 }
                                 // setIsVmixStarted(prev => !prev)
                             }}>
-                                <span style={{ color: "white" }}>{isVmixStarted ? "Turn Off" : "Connect Now"}</span>
+                                <span style={{ color: "white" }}>{isVmixStarted ? "Turn Off" : "Enable"}</span>
                             </button>
 
                         </div>
@@ -205,7 +228,7 @@ function ConnectionTypes() {
                         }
                         <div style={{ height: "53px", padding: '20px 0', position: 'absolute', bottom: 0, }}>
                             <button style={{ width: "164px", height: "53px", backgroundColor: "#FF3939", border: "none", borderRadius: "4px", cursor: "not-allowed", flex: 1 }} onClick={() => { setIsXsplitStarted(prev => !prev) }} disabled>
-                                <span style={{ color: "white" }}>{isXsplitStarted ? "Turn Off" : "Connect Now"}</span>
+                                <span style={{ color: "white" }}>{isXsplitStarted ? "Turn Off" : "Enable"}</span>
                             </button>
 
                         </div>
@@ -256,7 +279,7 @@ function ConnectionTypes() {
                         }
                         <div style={{ height: "53px", padding: '20px 0', position: 'absolute', bottom: 0, }}>
                             <button style={{ width: "164px", height: "53px", backgroundColor: "#FF3939", border: "none", borderRadius: "4px", cursor: "not-allowed", flex: 1 }} onClick={() => { setIsObsStarted(prev => !prev) }} disabled>
-                                <span style={{ color: "white" }}>{isObsStarted ? "Turn Off" : "Connect Now"}</span>
+                                <span style={{ color: "white" }}>{isObsStarted ? "Turn Off" : "Enable"}</span>
                             </button>
 
                         </div>
@@ -305,7 +328,7 @@ function ConnectionTypes() {
                         }
                         <div style={{ height: "53px", padding: '20px 0', position: 'absolute', bottom: 0, }}>
                             <button style={{ width: "164px", height: "53px", backgroundColor: "#FF3939", border: "none", borderRadius: "4px", cursor: "not-allowed", flex: 1 }} onClick={() => { setIsLightstreamStarted(prev => !prev) }} disabled>
-                                <span style={{ color: "white" }}>{isLightstreamStarted ? "Turn Off" : "Connect Now"}</span>
+                                <span style={{ color: "white" }}>{isLightstreamStarted ? "Turn Off" : "Enable"}</span>
                             </button>
 
                         </div>

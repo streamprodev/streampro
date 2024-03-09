@@ -325,6 +325,26 @@
   padding-bottom: 20px;
   
 }
+
+.finaloutput-carousel {
+  background-color: #15181C;
+  /* height: 30%; */
+  flex:1;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-size: calc(10px + 2vmin);
+  color: white;
+  gap:5px;
+  border-radius: 4px;
+  
+}
+
+.carousel-slider{
+  flex:1 !important
+}
 .preview {
   background-color: #15181C;
   /* height: 100%; */

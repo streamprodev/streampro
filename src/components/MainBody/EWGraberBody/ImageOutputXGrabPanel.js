@@ -8,15 +8,15 @@ const { ipcRenderer } = window.require('electron');
 function ImageOutputXGrabPanel() {
 
 
-    const { ewGrabbedText, setEwGrabberText, ewGrabbedImage, setEwGrabberImage, ewGrabbedScreen, setEwGrabberScreen, isEwGrabberConnected, setIsEwGrabberConnected } = useEwGrabber();
+    const { ewGrabbedText, setEwGrabberText, ewGrabbedImage, setEwGrabberImage, ewGrabbedScreen, setEwGrabberScreen, isEwGrabberConnected, setIsEwGrabberConnected, ewGrabbedBibleName, setEwGrabberBibleName, ewGrabbedBibleChapter, setEwGrabberBibleChapter, ewGrabbedBibleVerse, setEwGrabberBibleVerse, ewGrabbedBibleVersion, setEwGrabberBibleVersion } = useEwGrabber();
     const { activeId, setactiveId, setactiveLine, activeLine } = useSong()
 
     const { setselectedBook, setChapterContent, searchBook, setsearchBook, books, chapters, NewTestamentBooks, OldTestamentBooks, searchChapter, setsearchChapter, searchVerse, setsearchVerse, searchBookObj, setsearchBookObj, searchChapterObj, setsearchChapterObj, searchBookTemp, setsearchBookTemp, showSelectVersionMenu, setshowSelectVersionMenu, setshowSelectVersionMenuPosition, selectActiveVersionName, handleKeyPress, searchTerm, setSearchTerm, contentChapterRef, detectKeyDown, bookmarkopen, setbookmarkOPen, deleteBookmark, addBookmark, bookmarkedData, setbookmarkedData, setsearchData, inputBookRef, setselectedVerseArray, activeBook, bookmarkRef, inputVerseRef, searchResultRef, setsearchResultRef, multipleselectedVerseArray, setmultipleselectedVerseArray, bookmarkView, setbookmarkView, historyData, sethistoryData } = useBible()
 
-    const [ewGrabbedBibleName, setEwGrabberBibleName] = React.useState('')
-    const [ewGrabbedBibleChapter, setEwGrabberBibleChapter] = React.useState('')
-    const [ewGrabbedBibleVerse, setEwGrabberBibleVerse] = React.useState('')
-    const [ewGrabbedBibleVersion, setEwGrabberBibleVersion] = React.useState('')
+    // const [ewGrabbedBibleName, setEwGrabberBibleName] = React.useState('')
+    // const [ewGrabbedBibleChapter, setEwGrabberBibleChapter] = React.useState('')
+    // const [ewGrabbedBibleVerse, setEwGrabberBibleVerse] = React.useState('')
+    // const [ewGrabbedBibleVersion, setEwGrabberBibleVersion] = React.useState('')
 
     const updateGrabbedText = (event, text) => {
         setEwGrabberText(text)
@@ -29,12 +29,12 @@ function ImageOutputXGrabPanel() {
     }
 
     const updateGrabbedScreen = (event, screens) => {
-        console.log(screens)
+        // console.log(screens)
         setEwGrabberScreen(screens.length)
     }
 
     const updateGrabbedTest = (event, text) => {
-        console.log(text)
+        // console.log(text)
     }
     useEffect(() => {
         ipcRenderer.on('grabber-finished-test', updateGrabbedTest)
@@ -84,18 +84,16 @@ function ImageOutputXGrabPanel() {
                         setChapterContent(book.book_number, splitted[1])
                     }, 20);
                     setTimeout(() => {
-                        // setChapterContent(book.book_number, splitted[1])
                         setsearchVerse(splitted[2])
                     }, 30);
 
                     setactiveLine(splitted[2] + 1);
 
-                    // setmultipleselectedVerseArray(multiple)
-                    // console.log(activeBook.filter(({ book_number, chapter_number, verse_number }) => (chapter_number == parseInt(chapter)) && (book_number == book.book_number) && (verse_number >= verseStart && verse_number <= verseEnd)));
-                    setmultipleselectedVerseArray(activeBook.filter(({ book_number, chapter_number, verse_number }) => (chapter_number == parseInt(chapter)) && (book_number == book.book_number) && (verse_number >= verseStart && verse_number <= verseEnd)))
+                    // console.log(verseStart, verseEnd);
+                    // console.log(activeBook.filter(({ book_number, chapter_number, verse_number }) => (chapter_number == parseInt(chapter)) && (book_number == book.book_number) && (verse_number >= parseInt(verseStart) && verse_number <= parseInt(verseEnd))))
+                    setmultipleselectedVerseArray(activeBook.filter(({ book_number, chapter_number, verse_number }) => (chapter_number == parseInt(chapter)) && (book_number == book.book_number) && (verse_number >= parseInt(verseStart) && verse_number <= parseInt(verseEnd))))
 
                 }
-                // setselectedChapter(chapters.find(({ book_id, chapter_number }) => (book_id == selectedBook.book_id && chapter_number == value)))
             } else if (splitted.length == 4) {
                 setEwGrabberBibleName(splitted[0])
                 setEwGrabberBibleChapter(splitted[1])
@@ -125,6 +123,16 @@ function ImageOutputXGrabPanel() {
 
         }
     }, [ewGrabbedText])
+
+    useEffect(() => {
+        if (isEwGrabberConnected) {
+            setEwGrabberBibleName('')
+            setEwGrabberBibleChapter('')
+            setEwGrabberBibleVerse('')
+            setEwGrabberBibleVersion('')
+        }
+
+    }, [isEwGrabberConnected])
 
 
 

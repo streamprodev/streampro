@@ -11,33 +11,118 @@ import { getDocs, collection, query, where, getFirestore } from "@firebase/fires
 import { usePreviewXOutput } from '../context/PreviewXOutputContext';
 import { useRegistrationInfo } from '../context/RegistrationInfoContext';
 import SelectVmixInput from './SelectVmixInput';
+import { useLocation } from 'react-router-dom';
+import xmlJs from 'xml-js';
 
 const { ipcRenderer } = window.require('electron');
+const { v4: uuidv4 } = require('uuid');
 
-const ConnectNowModal = () => {
+const ConnectNowModal = ({ isEdit = false }) => {
 
+    const location = useLocation();
+
+
+    const { isConnectNowModalOpen, closeConnectNowModal, outputUrl, setoutputUrl, outputPasscode, setoutputPasscode, outputConnectionSoftware, setoutputConnectionSoftware, outputConnectionEstablished, setoutputConnectionEstablished, setisLive, selectedVmixInputKey, setselectedVmixInputKey, connectionEstablished, setConnectionEstablished, currentEditUuid, setcurrentEditUuid, bibleConnections, setbibleConnections, songConnections, setsongConnections, currentLocationPathname, setcurrentLocationPathname, isCurrentNowEdit, setisCurrentNowEdit, activeCarousel, setactiveCarousel, outputPathname } = usePreviewXOutput();
     useEffect(() => {
         ipcRenderer.on('getConnectionUrlData', getConnectionUrlData)
+        ipcRenderer.on('getavalaibleVmixInputs', getavalaibleVmixInputs)
 
         return () => {
             ipcRenderer.removeListener('getConnectionUrlData', getConnectionUrlData);
+            ipcRenderer.removeListener('getavalaibleVmixInputs', getavalaibleVmixInputs);
         }
-    }, []);
+    }, [location, outputPasscode, outputUrl]);
+
+    const [avalaibleInputs, setavalaibleInputs] = useState([])
 
 
     const { registrationInfo, firestore } = useRegistrationInfo();
-    const { isConnectNowModalOpen, closeConnectNowModal, outputUrl, setoutputUrl, outputPasscode, setoutputPasscode, outputConnectionSoftware, setoutputConnectionSoftware, outputConnectionEstablished, setoutputConnectionEstablished, setisLive, selectedVmixInputKey, setselectedVmixInputKey } = usePreviewXOutput();
 
     const [page, setPage] = useState(1)
     // const [streamingPlatform, setStreamingPlatform] = useState('')
     const [connectionMode, setconnectionMode] = useState('')
 
-    const seletInputNumber = () => {
+
+    useEffect(() => {
+        if (isCurrentNowEdit) {
+            setPage(5)
+            console.log(currentEditUuid)
+            // setavalaibleInputs()
+        }
+    }, [isCurrentNowEdit])
+
+    const seletInputNumber = (key) => {
         //seleck key
-        setPage(1)
-        // setoutputConnectionSoftware('')
-        // setconnectionMode('')
-        closeConnectNowModal()
+        // if (currentEditUuid.path == "/main/bible") {
+        //     setbibleConnections(prev => {
+        //         return prev.map(item => {
+        //             if (item.uuid === currentEditUuid.uuid) {
+        //                 return {
+        //                     ...item,
+        //                     key: key
+        //                 }
+        //             }
+        //             return item
+        //         })
+        //     })
+        // } else if (currentEditUuid.path == "/main/song") {
+        // }
+
+        setbibleConnections(prev => {
+            return prev.map(item => {
+                if (item.uuid === currentEditUuid.uuid) {
+                    return {
+                        ...item,
+                        key: key
+                    }
+                }
+                return item
+            })
+        })
+        if ((bibleConnections.filter(x => x.path == outputPathname && x.key).length) < 1) {
+            setactiveCarousel(prev => {
+                return {
+                    ...prev, [outputPathname]: {
+                        ...currentEditUuid,
+                        key: key
+                    }
+                }
+            })
+            // setactiveCarousel(key)
+        } else {
+            if (activeCarousel[outputPathname].uuid == currentEditUuid.uuid) {
+                setactiveCarousel(prev => {
+                    return {
+                        ...prev, [outputPathname]: {
+                            ...currentEditUuid,
+                            key: key
+                        }
+                    }
+                })
+            }
+        }
+
+        setTimeout(() => {
+            setoutputConnectionEstablished(1)
+            // setoutputConnectionSoftware('')
+            // setconnectionMode('')
+            closeConnectNowModal()
+            setavalaibleInputs([])
+
+            setselectedVmixInputKey({})
+            setPage(1)
+        }, 1500);
+    }
+
+    const getavalaibleVmixInputs = (event, data) => {
+        if (data) {
+            const jsonData = xmlJs.xml2json(data, { compact: true, spaces: 4 });
+            console.log(JSON.parse(jsonData).vmix.inputs.input)
+            setavalaibleInputs(JSON.parse(jsonData).vmix.inputs.input.filter(x => x._attributes.type == 'Xaml'))
+        }
+
+
+
     }
 
 
@@ -49,7 +134,7 @@ const ConnectNowModal = () => {
                 // // setconnectionMode('')
                 // closeConnectNowModal()
 
-                setPage(5)
+                // setPage(5)
 
             }, 1500);
         }
@@ -69,6 +154,7 @@ const ConnectNowModal = () => {
     const closeModal = () => {
         closeConnectNowModal()
         setPage(1)
+        setisCurrentNowEdit(false)
         // setoutputConnectionSoftware('')
         // setconnectionMode('')
     }
@@ -176,13 +262,15 @@ const ConnectNowModal = () => {
     }
 
     const getConnectionUrlData = async (event, data) => {
-        console.log(data)
+        console.log(data, "data")
+        // console.log(location)
         var url = outputUrl;
+        var passcode = outputPasscode
         if (data.row && data.row != undefined) {
             url = data.row.url
+            passcode = data.row.passcode
             setoutputUrl(data.row.url)
         } else {
-
             const firebaseConfig = {
                 apiKey: registrationInfo.firestore_apikey,
                 projectId: registrationInfo.firestore_projectid,
@@ -216,8 +304,25 @@ const ConnectNowModal = () => {
         try {
             ipcRenderer.invoke('connectVmix', { outputPasscode, outputUrl: url })
                 .then(res => {
-                    setoutputConnectionEstablished(1)
+                    // setoutputConnectionEstablished(1)
+                    // console.log(currentLocationPathname)
+                    // console.log(location.pathname)
+                    const uuid = uuidv4();
+                    const currentEditConnection = { uuid: uuid, outputUrl: url, outputPasscode: outputPasscode ?? passcode, path: outputPathname };
+                    setcurrentEditUuid(currentEditConnection)
+                    // if (location.pathname == '/main/bible') {
+                    //     setbibleConnections((prev) => [...prev, currentEditConnection])
 
+                    // } else if (location.pathname == '/main/song') {
+
+                    // }
+                    setbibleConnections((prev) => [...prev, currentEditConnection])
+                    ipcRenderer.send('getavalaibleVmixInputsInitiate', currentEditConnection);
+                    setConnectionEstablished(true)
+                    setTimeout(() => {
+                        setPage(5)
+
+                    }, 2000)
 
                 })
                 .catch(err => {
@@ -245,10 +350,10 @@ const ConnectNowModal = () => {
 
     }
 
-    const establishConnectionNew = async (local = null) => {
+    const establishConnectionNew = async () => {
         console.log(outputPasscode);
-        ipcRenderer.invoke('checkLocalConnection', outputPasscode).then(res => {
-            console.log(res)
+        ipcRenderer.invoke('checkLocalConnection', { outputPasscode }).then(res => {
+            // console.log(res)
         });
 
         return 'response';
@@ -284,10 +389,10 @@ const ConnectNowModal = () => {
                         }
 
                         {
-                            page === 4 && <EstablishingConnection onClick={updateConnectionMode} outputConnectionEstablished={outputConnectionEstablished} />
+                            page === 4 && <EstablishingConnection onClick={updateConnectionMode} outputConnectionEstablished={outputConnectionEstablished} connectionEstablished={connectionEstablished} />
                         }
                         {
-                            page === 5 && <SelectVmixInput setselectedVmixInputKey={setselectedVmixInputKey} onClick={seletInputNumber} />
+                            page === 5 && <SelectVmixInput setselectedVmixInputKey={setselectedVmixInputKey} onClick={seletInputNumber} avalaibleInputs={avalaibleInputs} selectedVmixInputKey={selectedVmixInputKey} />
                         }
                     </div>
 

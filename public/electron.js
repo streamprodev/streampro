@@ -149,9 +149,10 @@ ipcMain.handle('readFile', async (event, filePath) => {
 
 
 
-ipcMain.handle('checkLocalConnection', (event, passcode) => {
+ipcMain.handle('checkLocalConnection', (event, data) => {
+    console.log(data)
     db.get('select * from local_connections where passcode = ? limit 1', [
-        passcode
+        data.outputPasscode
     ], (err, row) => {
         console.log(row)
         event.sender.send('getConnectionUrlData', { row, err });
@@ -591,6 +592,74 @@ ipcMain.handle('sendToVmixBible', async (event, filePath) => {
     // }
     // return await setTextResponse.text();
     return 'working'
+});
+
+ipcMain.handle('goLiveWMulti', async (event, filePath) => {
+
+    console.log(filePath)
+    try {
+
+        var myHeaders = new Headers();
+        const base_64 = btoa(filePath.outputPasscode + "STP" + ":" + filePath.outputPasscode + "STP")
+        myHeaders.append("Authorization", "Basic " + base_64);
+        var requestOptions = {
+            method: 'GET',
+            redirect: 'follow',
+            headers: myHeaders,
+            mode: "no-cors",
+        };
+
+
+
+        // console.log(filePath.selectedVerseArray)
+        myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
+
+        var details = {
+            'txtMessage': filePath?.selectedVerseArray?.text ? filePath?.selectedVerseArray?.text : "",
+            'txtTitle': filePath?.selectedVerseArray?.text ? filePath?.selectedVerseArray?.ref : "",
+            'Update': 'Update'
+        };
+        if (filePath.path == '/main/song') {
+            console.log('songs')
+            var details = {
+                'txtMessage': filePath.finaloutputLine ? filePath.finaloutputLine : "",
+                'txtTitle': "",
+                'Update': 'Update'
+            };
+            // filePath.outputLine
+        } else {
+            console.log('bible')
+        }
+        var formBody = [];
+        for (var property in details) {
+            var encodedKey = encodeURIComponent(property);
+            var encodedValue = encodeURIComponent(details[property]);
+            formBody.push(encodedKey + "=" + encodedValue);
+        }
+        formBody = formBody.join("&");
+        var postrequestOptions = {
+            method: 'POST',
+            redirect: 'follow',
+            headers: myHeaders,
+            mode: "no-cors",
+            body: formBody
+        };
+
+
+        const setTextandTitleResponse = await fetch(filePath.outputUrl + "/titles/?key=" + filePath.key, postrequestOptions)
+        console.log(setTextandTitleResponse)
+        if (!setTextandTitleResponse.ok) {
+            if (!reconnecting) {
+                //updateReconnectingStatus(event, true)
+            }
+        }
+        const data = await setTextandTitleResponse.text();
+    } catch (error) {
+        if (!reconnecting) {
+            //updateReconnectingStatus(event, true)
+        }
+        throw error
+    }
 });
 
 
@@ -1262,6 +1331,24 @@ ipcMain.on('createConnection', async (event, registration_info, enableExternalCo
     }
 
 });
+ipcMain.on('getavalaibleVmixInputsInitiate', async (event, data,) => {
+
+    var myHeaders = new Headers();
+    const base_64 = btoa(data.outputPasscode + "STP" + ":" + data.outputPasscode + "STP")
+    myHeaders.append("Authorization", "Basic " + base_64);
+    var requestOptions = {
+        method: 'GET',
+        redirect: 'follow',
+        headers: myHeaders,
+        mode: "no-cors",
+    };
+    const response = await fetch(data.outputUrl + "/api", requestOptions);
+    let res = await response.text();
+    event.reply('getavalaibleVmixInputs', res);
+
+});
+
+
 
 ipcMain.on('setngrok', async (event, registration_info, enableExternalConnection = 0) => {
     console.log(enableExternalConnection, 'enableExternalConnection')
@@ -1453,19 +1540,16 @@ ipcMain.on("activateEwGrabber", async function (event, arg) {
     var firstDate = new Date();
     console.log(new Date().toLocaleTimeString());
 
-    while (await getScreenCount() <= initial_display_count) {
-    }
+    // while (await getScreenCount() <= initial_display_count) {
+    // }
 
-    setTimeout(() => {
-        screenshot.listDisplays().then((displays) => {
-            console.log("about to show displays")
-            console.log(new Date().toLocaleTimeString());
-            console.log(displays);
-            active_display = displays[displays.length - 1].name;
+    screenshot.listDisplays().then((displays) => {
+        console.log(displays);
+        console.log("about to show displays")
+        console.log(new Date().toLocaleTimeString());
+        active_display = displays[displays.length - 1].name;
 
-        });
-
-    }, 3000);
+    });
 
     // while 
     setImmediate(function A(active_display) {
@@ -1484,8 +1568,8 @@ async function getScreenCount() {
 ipcMain.on("deactivateEwGrabber", function (event, arg) {
     isEwGrabberActive = false;
     var pat = __dirname + "/virtual_monitor_installer/remove_screen.bat";
-    var pat = path.join(app.getPath('documents'), 'StreamPro/virtual_monitor_installer/remove_screen.bat')
-    console.log("Current directory:", pat);
+    // var pat = path.join(app.getPath('documents'), 'StreamPro/virtual_monitor_installer/remove_screen.bat')
+    console.log("Current directoryclose :", pat);
 
     exec(pat, (error, stdout, stderr) => {
 
@@ -1848,6 +1932,8 @@ function watchSnapshot() {
 
 function getEasyWorshipOutput(event, active_display) {
     //console.log("in main process")
+
+    console.log(new Date().getTime(), 'start');
     if (!isEwGrabberActive) {
         return;
     }
@@ -1856,8 +1942,11 @@ function getEasyWorshipOutput(event, active_display) {
     screenshot.listDisplays().then((displays) => {
 
         event.sender.send("grabber-finished-screen", displays);
+        // console.log(displays);
         active_display = displays[displays.length - 1].name;
-        console.log(active_display);
+
+        console.log(new Date(), 'get active display');
+        // console.log(active_display);
 
     });
 
@@ -1871,12 +1960,12 @@ function getEasyWorshipOutput(event, active_display) {
             const compressedImage = await sharp(img).webp({ quality: 1 }).resize({ width: 300 }).toBuffer();
             const worker = global.shared.worker;
             const { data: { text } } = await worker.recognize(compressedImage);
-            // console.log(new Date().getTime() - firstDate.getTime());
-            console.log(text);
+            console.log(new Date(), 'decoded');
+            // console.log(text);
             event.sender.send("grabber-finished", text);
-            setImmediate(function A() {
-                getEasyWorshipOutput(event, active_display);
-            });
+            // setImmediate(function A() {
+            // });
+            getEasyWorshipOutput(event, active_display);
         })();
     });
 }

@@ -2,11 +2,18 @@ import { Edit2 } from 'iconsax-react'
 import React, { useEffect } from 'react'
 import { TbBrandGooglePlay } from 'react-icons/tb'
 import { useEwGrabber } from '../../../context/EwGrabberContext';
+import { usePreviewXOutput } from '../../../context/PreviewXOutputContext';
+import { useSong } from '../../../context/SongContext';
+import { useBible } from '../../../context/BibleContext';
 
 const { ipcRenderer } = window.require('electron');
 function ControlBoard() {
 
     const { isEwGrabberConnected, setIsEwGrabberConnected, ewGrabbedText, setEwGrabberText, ewGrabbedScreen, setEwGrabberImage } = useEwGrabber();
+
+    const { setmultipleselectedVerseArray, setselectedVerseArray } = useBible();
+
+    const { activeId, setactiveId, setactiveLine, activeLine } = useSong()
 
 
 
@@ -27,6 +34,14 @@ function ControlBoard() {
                         isEwGrabberConnected ? <button style={{ width: "164px", height: "63px", backgroundColor: "#FF3939", border: "none", borderRadius: "4px", cursor: "pointer", flex: 1 }} onClick={() => {
                             ipcRenderer.send('deactivateEwGrabber', 'final');
                             setIsEwGrabberConnected(false)
+                            setEwGrabberText('');
+                            setEwGrabberImage('');
+                            setTimeout(() => {
+                                setactiveLine(-1);
+                                setmultipleselectedVerseArray([])
+                                setselectedVerseArray({})
+
+                            }, 2000)
                         }}>
                             <span style={{ color: "white" }}>Turn OFF</span>
                         </button>

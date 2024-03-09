@@ -24,6 +24,7 @@ export function PreviewXOutputContextProvider({ children }) {
 
     const [isConnectNowModalOpen, setIsConnectNowModalOpen] = useState(false);
     const [isGenerateURLModalOpen, setisGenerateURLModalOpen] = useState(false);
+    const [currentLocationPathname, setcurrentLocationPathname] = useState(0);
 
 
 
@@ -65,11 +66,35 @@ export function PreviewXOutputContextProvider({ children }) {
 
     const [bibleConnections, setbibleConnections] = useState([]);
     const [songConnections, setsongConnections] = useState([]);
+    const [connectionEstablished, setConnectionEstablished] = useState(false);
+    const [currentEditUuid, setcurrentEditUuid] = useState(0);
+    const [isCurrentNowEdit, setisCurrentNowEdit] = useState(false);
+    const [activeCarousel, setactiveCarousel] = useState({});
+    const [outputPathname, setoutputPathname] = useState("");
 
 
 
     const location = useLocation();
     const { selectedBook, setselectedBook, selectedChapter, setselectedChapter, searchVerse, selectedVerseArray, selectActiveVersion, multipleselectedVerseArray, setmultipleselectedVerseArray, getVerseText } = useBible()
+
+    useEffect(() => {
+        // console.log(showoutputOptions)
+        console.log(location.pathname)
+        setcurrentLocationPathname(location.pathname)
+        if (location.pathname == "/main/bible" || location.pathname == "/main/ew-graber") {
+            setoutputPathname("/main/bible")
+        }
+        else if (location.pathname == "/main/song") {
+            setoutputPathname("/main/song")
+        }
+
+
+    }, [location.pathname])
+
+    useEffect(() => {
+        console.log(activeCarousel)
+    }, [activeCarousel])
+
 
     useEffect(() => {
         ipcRenderer.on('vmixDisconected', vmixDisconected)
@@ -139,8 +164,9 @@ export function PreviewXOutputContextProvider({ children }) {
     }, [outputLine, selectedVerseArray, multipleselectedVerseArray]);
 
     useEffect(() => {
-        // console.log(selectedVerseArray)
-    }, [selectedVerseArray]);
+        console.log(bibleConnections)
+        console.log(songConnections)
+    }, [bibleConnections, songConnections]);
 
     useEffect(() => {
         if (outputConnectionEstablished) {
@@ -157,16 +183,33 @@ export function PreviewXOutputContextProvider({ children }) {
                     }
 
                     const data = { outputUrl, outputPasscode, finaloutputLine, selectedBook, selectedChapter, searchVerse, selectedVerseArray: clone, selectActiveVersion }
-                    ipcRenderer.invoke('goLiveWBible', data).then(res => { }).catch(err => { console.log(err) })
+                    console.log({ outputUrl, outputPasscode, finaloutputLine, selectedBook, selectedChapter, searchVerse, selectedVerseArray: clone, selectActiveVersion })
+
+                    const liveBibleConnections = bibleConnections.filter(x => x.path == "/main/bible" && x.key);
+                    if (liveBibleConnections.length > 0) {
+                        liveBibleConnections.forEach(x => {
+                            const data = { outputUrl, outputPasscode, finaloutputLine, selectedBook, selectedChapter, searchVerse, selectedVerseArray: clone, selectActiveVersion, path: x.path, key: x.key._attributes.key }
+                            ipcRenderer.invoke('goLiveWMulti', data).then(res => { }).catch(err => { console.log(err) })
+                        })
+                    }
+                    // ipcRenderer.invoke('goLiveWBible', data).then(res => { }).catch(err => { console.log(err) })
 
                 }, 0);
                 return
             }
-            const data = { outputUrl, outputPasscode, finaloutputLine }
-            ipcRenderer.invoke('goLiveWSongs', data).then(res => { }).catch(err => { })
+            // ipcRenderer.invoke('goLiveWSongs', data).then(res => { }).catch(err => { })
+
+            const liveBibleConnections = bibleConnections.filter(x => x.path == "/main/song" && x.key);
+            if (liveBibleConnections.length > 0) {
+                liveBibleConnections.forEach(x => {
+                    const data = { outputUrl, outputPasscode, finaloutputLine, path: x.path, key: x.key._attributes.key }
+                    // const data = { outputUrl, outputPasscode, finaloutputLine, selectedBook, selectedChapter, searchVerse, selectedVerseArray: clone, selectActiveVersion, path: x.path, key: x.key._attributes.key }
+                    ipcRenderer.invoke('goLiveWMulti', data).then(res => { }).catch(err => { console.log(err) })
+                })
+            }
 
         }
-    }, [finaloutputLine, multipleselectedVerseArray]);
+    }, [finaloutputLine, multipleselectedVerseArray, bibleConnections]);
 
     useEffect(() => {
         if (isLive) {
@@ -270,7 +313,7 @@ export function PreviewXOutputContextProvider({ children }) {
 
     const handleShowOutputOption = (e) => {
         e.preventDefault();
-        // setActiveItem(itemId);
+        console.log('here')
         if (showoutputOptions) {
             setTimeout(() => {
                 setshowoutputOptions(false);
@@ -281,8 +324,8 @@ export function PreviewXOutputContextProvider({ children }) {
         const clickY = e.clientY;
         const screenW = window.innerWidth;
         const screenH = window.innerHeight;
-        const menuW = 200;
-        const menuH = 190;
+        const menuW = 230;
+        const menuH = 80;
 
         const posX = clickX + menuW > screenW ? screenW - menuW : clickX;
         const posY = clickY + menuH > screenH ? screenH - menuH : clickY;
@@ -388,7 +431,7 @@ export function PreviewXOutputContextProvider({ children }) {
 
     return (
         <PreviewXOutputContext.Provider value={{
-            ngrokUrlError, setngrokUrlError, ngrokStatus, setngrokStatus, outputOptionsPosition, setoutputOptionsPosition, showoutputOptions, setshowoutputOptions, isLive, setisLive, externalConnectionConnectionEstablished, setexternalConnectionConnectionEstablished, externalConnectionPasscode, setexternalConnectionPasscode, externalConnectionUrl, setexternalConnectionUrl, outputConnectionEstablished, setoutputConnectionEstablished, outputConnectionSoftware, setoutputConnectionSoftware, outputPasscode, setoutputPasscode, outputUrl, setoutputUrl, finaloutputLine, setfinaloutputLine, outputLine, setoutputLine, seconds, minutes, hours, days, isRunning, start, pause, reset, copiedToaster, vmixDisconected, isConnectNowModalOpen, setIsConnectNowModalOpen, isGenerateURLModalOpen, setisGenerateURLModalOpen, outputOptionsRef, handleShowOutputOption, closeConnectNowModal, closeGenerateURLModal, reconnectingStatus, setreconnectingStatus, generatereconnectingStatus, setgeneratereconnectingStatus, selectedVmixInputKey, setselectedVmixInputKey, isVmixStarted, setIsVmixStarted, isObsStarted, setIsObsStarted, isLightstreamStarted, setIsLightstreamStarted, isXsplitStarted, setIsXsplitStarted, isVmixExternalConnectionEnabled, setIsVmixExternalConnectionEnabled, isObsExternalConnectionEnabled, setIsObsExternalConnectionEnabled, isLightstreamExternalConnectionEnabled, setIsLightstreamExternalConnectionEnabled, isXsplitExternalConnectionEnabled, setIsXsplitExternalConnectionEnabled, bibleConnections, setbibleConnections, songConnections, setsongConnections
+            ngrokUrlError, setngrokUrlError, ngrokStatus, setngrokStatus, outputOptionsPosition, setoutputOptionsPosition, showoutputOptions, setshowoutputOptions, isLive, setisLive, externalConnectionConnectionEstablished, setexternalConnectionConnectionEstablished, externalConnectionPasscode, setexternalConnectionPasscode, externalConnectionUrl, setexternalConnectionUrl, outputConnectionEstablished, setoutputConnectionEstablished, outputConnectionSoftware, setoutputConnectionSoftware, outputPasscode, setoutputPasscode, outputUrl, setoutputUrl, finaloutputLine, setfinaloutputLine, outputLine, setoutputLine, seconds, minutes, hours, days, isRunning, start, pause, reset, copiedToaster, vmixDisconected, isConnectNowModalOpen, setIsConnectNowModalOpen, isGenerateURLModalOpen, setisGenerateURLModalOpen, outputOptionsRef, handleShowOutputOption, closeConnectNowModal, closeGenerateURLModal, reconnectingStatus, setreconnectingStatus, generatereconnectingStatus, setgeneratereconnectingStatus, selectedVmixInputKey, setselectedVmixInputKey, isVmixStarted, setIsVmixStarted, isObsStarted, setIsObsStarted, isLightstreamStarted, setIsLightstreamStarted, isXsplitStarted, setIsXsplitStarted, isVmixExternalConnectionEnabled, setIsVmixExternalConnectionEnabled, isObsExternalConnectionEnabled, setIsObsExternalConnectionEnabled, isLightstreamExternalConnectionEnabled, setIsLightstreamExternalConnectionEnabled, isXsplitExternalConnectionEnabled, setIsXsplitExternalConnectionEnabled, bibleConnections, setbibleConnections, songConnections, setsongConnections, connectionEstablished, setConnectionEstablished, currentEditUuid, setcurrentEditUuid, currentLocationPathname, setcurrentLocationPathname, isCurrentNowEdit, setisCurrentNowEdit, activeCarousel, setactiveCarousel, outputPathname, setoutputPathname
         }}>
             {children}
         </PreviewXOutputContext.Provider>

@@ -1,8 +1,8 @@
 
-import { useEffect, useMemo, useState, useRef } from 'react';
+import { useEffect, useMemo, useState, useRef, CSSProperties } from 'react';
 import SideBar from '../SideBar';
 import CreateSongModal from '../CreateSongModal';
-import { Copy, Edit2, ProfileCircle, SearchNormal, Setting2, ArrowDown2, ArrowUp2, ArrowCircleLeft } from 'iconsax-react';
+import { Copy, Edit2, ProfileCircle, SearchNormal, Setting2, ArrowDown2, ArrowUp2, ArrowCircleLeft, ArrowCircleRight } from 'iconsax-react';
 import ImportSongsModal from '../ImportSongsModal';
 import SongListItem from '../SongListItem';
 import MiniSearch from 'minisearch'
@@ -26,22 +26,48 @@ import { useLocation } from 'react-router-dom';
 import { useBible } from '../../context/BibleContext';
 import { Carousel } from 'react-responsive-carousel';
 import "react-responsive-carousel/lib/styles/carousel.min.css";
+import { useEwGrabber } from '../../context/EwGrabberContext';
 const { ipcRenderer } = window.require('electron');
 
 function PreviewXOutput() {
+
+    const arrowStyles = {
+        position: 'absolute',
+        zIndex: 999,
+        top: 'calc(30%)',
+        width: 20,
+        height: 20,
+        cursor: 'pointer',
+    };
+
+    const indicatorStyles = {
+        // position: 'absolute',
+        background: 'transparent',
+        width: 8,
+        height: 8,
+        borderRadius: '50%',
+        display: 'inline-block',
+        margin: '0 4px',
+        bottom: 0,
+        border: '1px solid #FF3939',
+        // right:
+    };
 
     const location = useLocation();
 
 
 
     const [currentBibleOutputIndex, setCurrentBibleOutputIndex] = useState(0);
-    const [currentSongOutputIndex, setCurrentSongOutputIndex] = useState(0);
+    const [selectedSlide, setselectedSlide] = useState(0);
+    // const [activeCarousel, setactiveCarousel] = useState({});
     // const [outPutType, setoutPutType] = useState('song');
     const {
-        outputLine, setoutputLine, setngrokUrlError, ngrokStatus, setngrokStatus, outputOptionsPosition, setoutputOptionsPosition, showoutputOptions, setshowoutputOptions, isLive, setisLive, externalConnectionConnectionEstablished, setexternalConnectionConnectionEstablished, externalConnectionPasscode, setexternalConnectionPasscode, externalConnectionUrl, setexternalConnectionUrl, outputConnectionEstablished, setoutputConnectionEstablished, outputConnectionSoftware, setoutputConnectionSoftware, outputPasscode, setoutputPasscode, outputUrl, setoutputUrl, finaloutputLine, setfinaloutputLine, seconds, minutes, hours, days, isRunning, start, pause, reset, copiedToaster, vmixDisconected, isConnectNowModalOpen, setIsConnectNowModalOpen, isGenerateURLModalOpen, setisGenerateURLModalOpen, outputOptionsRef, handleShowOutputOption, reconnectingStatus, setreconnectingStatus, generatereconnectingStatus, setgeneratereconnectingStatus } = usePreviewXOutput();
+        outputLine, setoutputLine, setngrokUrlError, ngrokStatus, setngrokStatus, outputOptionsPosition, setoutputOptionsPosition, showoutputOptions, setshowoutputOptions, isLive, setisLive, externalConnectionConnectionEstablished, setexternalConnectionConnectionEstablished, externalConnectionPasscode, setexternalConnectionPasscode, externalConnectionUrl, setexternalConnectionUrl, outputConnectionEstablished, setoutputConnectionEstablished, outputConnectionSoftware, setoutputConnectionSoftware, outputPasscode, setoutputPasscode, outputUrl, setoutputUrl, finaloutputLine, setfinaloutputLine, seconds, minutes, hours, days, isRunning, start, pause, reset, copiedToaster, vmixDisconected, isConnectNowModalOpen, setIsConnectNowModalOpen, isGenerateURLModalOpen, setisGenerateURLModalOpen, outputOptionsRef, handleShowOutputOption, reconnectingStatus, setreconnectingStatus, generatereconnectingStatus, setgeneratereconnectingStatus, currentLocationPathname, setcurrentLocationPathname, bibleConnections, isCurrentNowEdit, setisCurrentNowEdit, activeCarousel, setactiveCarousel, outputPathname, setoutputPathname } = usePreviewXOutput();
 
     const { activeSongArray, activeLine, setactiveLine, outPutType, setoutPutType } = useSong()
     const { activeChapterContent, selectActiveVersion, selectedVerseArray, setselectedVerseArray, multipleselectedVerseArray, setmultipleselectedVerseArray, getVerseText } = useBible()
+
+    const { isEwGrabberConnected, setIsEwGrabberConnected, ewGrabbedText, setEwGrabberText, ewGrabbedScreen, setEwGrabberImage } = useEwGrabber();
 
     const iconRef = useRef(null)
     // const [reconnectingStatus, setreconnectingStatus] = useState(false)
@@ -150,7 +176,7 @@ function PreviewXOutput() {
                 } else {
                     if (activeLine !== -1 && activeChapterContent) {
                         // console.log(activeChapterContent)
-                        setoutputLine(selectedVerseArray.text)
+                        setoutputLine(selectedVerseArray?.text)
                         // setoutputLine(activeChapterContent[activeLine].text)
                     } else {
                         setoutputLine('')
@@ -160,12 +186,35 @@ function PreviewXOutput() {
             // console.log(activeLine)
         }
     }, [activeLine, multipleselectedVerseArray, activeChapterContent]);
+    const carouselRef = useRef(null);
 
     useEffect(() => {
-        // console.log(reconnectingStatus)
+        // console.log(activeCarousel)
+    }, [activeCarousel])
+
+    useEffect(() => {
+        // console.log(showoutputOptions)
+        // console.log(outputOptionsPosition)
+        // console.log(location.pathname)
+        // console.log(bibleConnections.filter(x => x.path == location.pathname && x.key));
+
+        setactiveLine(-1);
+        setmultipleselectedVerseArray([])
+        setselectedVerseArray({})
+        setoutputLine('')
+        if (!isEwGrabberConnected) {
+            setEwGrabberText('')
+            setEwGrabberImage('')
+        }
+        console.log('clear')
 
 
-    }, [reconnectingStatus])
+    }, [location.pathname])
+    const handleDelete = (current, total) => {
+        if (current > total) {
+            setselectedSlide(total - 1)
+        }
+    }
 
     return (
         <div className='connectionsXnotes'>
@@ -180,81 +229,157 @@ function PreviewXOutput() {
                 </div>
                 <div style={{ flex: 1 }}></div>
             </div>
-            <div className='finaloutput'>
 
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginLeft: "24px", gap: "5px", marginRight: "24px", padding: "20px 0px" }}>
-                    <div style={{ display: "flex", justifyContent: "flex-start", alignItems: "flex-start", gap: "5px" }}>
-                        <span style={{ fontSize: '14px', fontWeight: "600", color: "#FFFFFF" }}>{!outputConnectionEstablished ? "Output(Not Connected)" : "Output (" + capitalize(outputConnectionSoftware) + ")"} </span>
-                        <div id={(reconnectingStatus && outputConnectionEstablished) && 'blink'} style={{ height: "11px", width: "11px", borderRadius: "50%", backgroundColor: !outputConnectionEstablished ? "#FF3939" : reconnectingStatus ? "yellow" : "#3EDB57", marginTop: "5px" }}></div>
-                    </div>
-                    {/* {
-                        outputConnectionEstablished == 1 &&
-                        <button style={{ width: "82px", height: "30px", backgroundColor: "#15181C", border: "1px solid #FF3939", borderRadius: "4px", cursor: "pointer", borderColor: isLive ? "#3EDB57" : "#FF3939" }} onClick={() => setisLive(prev => !prev)}>
-                            <span style={{ color: isLive ? "#3EDB57" : "#FF3939" }}>{!isLive ? "Go Live" : "Live"}</span>
-                        </button>
-                    } */}
-                    {
-                        outputConnectionEstablished == 1 &&
-                        <div style={{ cursor: "pointer", width: "10px" }} onClick={handleShowOutputOption} ref={iconRef}>
-                            <SlOptionsVertical size={15} color='#B1B1B1' />
+            {(bibleConnections.filter(x => x.path == outputPathname && x.key).length) < 1 ?
+                (<div className='finaloutput'>
 
-
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginLeft: "24px", gap: "5px", marginRight: "24px", padding: "20px 0px" }}>
+                        <div style={{ display: "flex", justifyContent: "flex-start", alignItems: "flex-start", gap: "5px" }}>
+                            <span style={{ fontSize: '14px', fontWeight: "600", color: "#FFFFFF" }}> Output(Not Connected) </span>
+                            <div id={(reconnectingStatus && outputConnectionEstablished) && 'blink'} style={{ height: "11px", width: "11px", borderRadius: "50%", backgroundColor: "#FF3939", marginTop: "5px" }}></div>
                         </div>
-                    }
-                </div>
-                {
-                    finaloutputLine &&
-                    <div style={{ paddingLeft: "24px", paddingRight: "24px", textAlign: "left", alignItems: "flex-start", display: 'flex', flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-start", gap: "10px", }}>
-                        {(outPutType == 'bible' && finaloutputLine) && <span style={{ listStyleType: "none", fontSize: '14px', fontWeight: "500", color: "#FF3939", textAlign: "left" }} onClick={() => { }}>{multipleselectedVerseArray.length > 0 ? getVerseText(multipleselectedVerseArray).ref : selectedVerseArray?.book_name + " " + selectedVerseArray?.chapter_number + ":" + selectedVerseArray?.verse_number + " (" + selectActiveVersion.toUpperCase() + ")"} </span>}
-                        {finaloutputLine && <span style={{ fontSize: '14px', fontWeight: "600", color: "#FF3939", lineHeight: "1.3" }}>{(location.pathname == "/main/bible" || location.pathname == "/main/ew-graber") ? multipleselectedVerseArray.length > 0 ? getVerseText(multipleselectedVerseArray).text : selectedVerseArray?.text : finaloutputLine} </span>}
                     </div>
-                }
 
-                <div style={{ flex: outputConnectionEstablished }}></div>
-                {
-                    outputConnectionEstablished !== 1 &&
+                    <div style={{ flex: outputConnectionEstablished }}></div>
+
+
                     <div style={{ marginBottom: "20px" }}>
                         <button style={{ width: "164px", height: "53px", backgroundColor: "#FF3939", border: "none", borderRadius: "4px", cursor: "pointer", flex: 1 }} onClick={openConnectNowModal}>
                             <span style={{ color: "white" }}>Connect Now</span>
                         </button>
                     </div>
-                }
-                {showoutputOptions && (
-                    <div ref={outputOptionsRef}>
-                        <OutputOptionsMenu
-                            posX={outputOptionsPosition.x}
-                            posY={outputOptionsPosition.y}
-                            setshowoutputOptions={setshowoutputOptions}
-                            setoutputConnectionEstablished={setoutputConnectionEstablished}
-                            setisLive={setisLive}
-                            showoutputOptions={showoutputOptions}
-                            outputOptionsRef={outputOptionsRef}
-                            setreconnectingStatus={setreconnectingStatus}
-                            iconRef={iconRef}
 
-                        />
+                    {showoutputOptions && (
+                        <div ref={outputOptionsRef}>
+                            <OutputOptionsMenu
+                                posX={outputOptionsPosition.x}
+                                posY={outputOptionsPosition.y}
+                                setshowoutputOptions={setshowoutputOptions}
+                                setoutputConnectionEstablished={setoutputConnectionEstablished}
+                                setisLive={setisLive}
+                                showoutputOptions={showoutputOptions}
+                                outputOptionsRef={outputOptionsRef}
+                                setreconnectingStatus={setreconnectingStatus}
+                                iconRef={iconRef}
+
+                            />
+                        </div>
+                    )}
+                </div>)
+                :
+                (<div className='finaloutput-carousel'>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginLeft: "24px", gap: "5px", marginRight: "24px", padding: "18px 0px" }}>
+                        <div style={{ display: "flex", justifyContent: "flex-start", alignItems: "flex-start", gap: "5px" }}>
+                            <span style={{ fontSize: '14px', fontWeight: "600", color: "#FFFFFF" }}>{!outputConnectionEstablished ? "Output(Not Connected)" : "Output (" + capitalize(outputConnectionSoftware) + " - " + activeCarousel[outputPathname]?.key?._text + ")"} </span>
+                            <div id={(reconnectingStatus && outputConnectionEstablished) && 'blink'} style={{ height: "11px", width: "11px", borderRadius: "50%", backgroundColor: !outputConnectionEstablished ? "#FF3939" : reconnectingStatus ? "yellow" : "#3EDB57", marginTop: "5px" }}></div>
+                        </div>
+
+                        <div style={{ cursor: "pointer", width: "10px" }} onClick={handleShowOutputOption} ref={iconRef}>
+                            <SlOptionsVertical size={15} color='#B1B1B1' />
+
+
+                        </div>
+
                     </div>
-                )}
-            </div>
+                    <Carousel
+                        ref={carouselRef}
+                        onChange={(index, item) => {
+                            console.log(index, item)
+                            // setactiveCarousel(bibleConnections.find(x => x.key._attributes.key == item.key.substring(2)))
+                            setactiveCarousel(prev => {
+                                return { ...prev, [outputPathname]: bibleConnections.find(x => x.key._attributes.key == item.key.substring(2)) }
+                            })
+                        }}
+                        selectedItem={selectedSlide}
+                        className='finaloutput-carousel'
+                        statusFormatter={(current, total) => { handleDelete(current, total); return `` }}
+                        renderArrowPrev={(onClickHandler, hasPrev, label) =>
+                            hasPrev && (
+                                <ArrowCircleLeft onClick={onClickHandler} title={label} style={{ ...arrowStyles, left: 15 }} size={10} />
 
-            {/* <Carousel
-                renderArrowPrev={() => <ArrowCircleLeft
-                    onClick={() => {
-                        currentBibleOutputIndex > 0 ?? setCurrentBibleOutputIndex(currentBibleOutputIndex - 1)
-                    }}
-                    size={14}
-                    style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer' }}
-                />}
-                selectedItem={currentBibleOutputIndex}
-                onChange={(i) => setCurrentBibleOutputIndex(i)}
-            >
-                <div key="slide1" style={{ padding: 20, height: 150 }}>
-                    Text 01
-                </div>
-                <div key="slide2" style={{ padding: 20, height: 150 }}>
-                    Text 02
-                </div>
-            </Carousel> */}
+                            )
+                        }
+                        renderArrowNext={(onClickHandler, hasNext, label) =>
+                            hasNext && (
+                                <ArrowCircleRight onClick={onClickHandler} title={label} style={{ ...arrowStyles, right: 15 }} size={10} />
+                            )
+                        }
+                        showThumbs={false}
+                        renderIndicator={(onClickHandler, isSelected, index, label) => {
+                            if (isSelected) {
+                                return (
+                                    <li
+                                        style={{ ...indicatorStyles, background: '#FF3939' }}
+                                        aria-label={`Selected: ${label} ${index + 1}`}
+                                        title={`Selected: ${label} ${index + 1}`}
+                                    />
+                                );
+                            }
+                            return (
+                                <li
+                                    style={indicatorStyles}
+                                    onClick={onClickHandler}
+                                    onKeyDown={onClickHandler}
+                                    value={index}
+                                    key={index}
+                                    role="button"
+                                    tabIndex={0}
+                                    title={`${label} ${index + 1}`}
+                                    aria-label={`${label} ${index + 1}`}
+                                />
+                            );
+                        }}
+                    >
+                        {
+                            bibleConnections.filter(x => x.path == outputPathname && x.key).map((item, index) => {
+                                // setactiveCarousel(item)
+                                return (
+                                    <div key={item.key._attributes.key} style={{ display: "flex", justifyContent: "center", alignItems: "flex-start", flex: 1, position: 'relative' }}>
+                                        <div className='' style={{ width: '100%' }}>
+
+
+                                            <div style={{ paddingLeft: "24px", paddingRight: "24px", textAlign: "left", alignItems: "flex-start", display: 'flex', flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-start", gap: "10px", }}>
+                                                {(outPutType == 'bible' && finaloutputLine) && <span style={{ listStyleType: "none", fontSize: '14px', fontWeight: "500", color: "#FF3939", textAlign: "left" }} onClick={() => { }}>{multipleselectedVerseArray.length > 0 ? getVerseText(multipleselectedVerseArray).ref : selectedVerseArray?.book_name + " " + selectedVerseArray?.chapter_number + ":" + selectedVerseArray?.verse_number + " (" + selectActiveVersion.toUpperCase() + ")"} </span>}
+                                                {finaloutputLine && <span style={{ fontSize: '14px', fontWeight: "600", color: "#FF3939", lineHeight: "1.3" }}>{(location.pathname == "/main/bible" || location.pathname == "/main/ew-graber") ? multipleselectedVerseArray.length > 0 ? getVerseText(multipleselectedVerseArray).text : selectedVerseArray?.text : finaloutputLine} </span>}
+                                            </div>
+
+
+                                            <div style={{ flex: outputConnectionEstablished }}></div>
+
+                                        </div>
+
+
+                                    </div>
+
+                                )
+                            }
+                            )
+                        }
+                    </Carousel>
+
+                    {showoutputOptions && (
+                        <div ref={outputOptionsRef}>
+                            <OutputOptionsMenu
+                                posX={outputOptionsPosition.x}
+                                posY={outputOptionsPosition.y}
+                                setshowoutputOptions={setshowoutputOptions}
+                                setoutputConnectionEstablished={setoutputConnectionEstablished}
+                                setisLive={setisLive}
+                                showoutputOptions={showoutputOptions}
+                                outputOptionsRef={outputOptionsRef}
+                                setreconnectingStatus={setreconnectingStatus}
+                                iconRef={iconRef}
+                                setIsConnectNowModalOpen={setIsConnectNowModalOpen}
+                                isCurrentNowEdit={isCurrentNowEdit}
+                                setisCurrentNowEdit={setisCurrentNowEdit}
+                                activeCarousel={activeCarousel}
+
+                            />
+                        </div>
+                    )}
+
+                </div>)
+            }
 
             {/* <div className='externalConnection'>
                 <div style={{ display: "flex", justifyContent: "flex-start", alignItems: "center", marginTop: "20px", marginLeft: "24px", gap: "5px" }}>
@@ -294,8 +419,68 @@ function PreviewXOutput() {
                 </div>
             </div> */}
 
-        </div>
+        </div >
     );
 }
 
 export default PreviewXOutput;
+
+
+{/* <div className='finaloutput'>
+
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginLeft: "24px", gap: "5px", marginRight: "24px", padding: "20px 0px" }}>
+        <div style={{ display: "flex", justifyContent: "flex-start", alignItems: "flex-start", gap: "5px" }}>
+            <span style={{ fontSize: '14px', fontWeight: "600", color: "#FFFFFF" }}>{!outputConnectionEstablished ? "Output(Not Connected)" : "Output (" + capitalize(outputConnectionSoftware) + ")"} </span>
+            <div id={(reconnectingStatus && outputConnectionEstablished) && 'blink'} style={{ height: "11px", width: "11px", borderRadius: "50%", backgroundColor: !outputConnectionEstablished ? "#FF3939" : reconnectingStatus ? "yellow" : "#3EDB57", marginTop: "5px" }}></div>
+        </div>
+        {
+            outputConnectionEstablished == 1 &&
+            <button style={{ width: "82px", height: "30px", backgroundColor: "#15181C", border: "1px solid #FF3939", borderRadius: "4px", cursor: "pointer", borderColor: isLive ? "#3EDB57" : "#FF3939" }} onClick={() => setisLive(prev => !prev)}>
+                <span style={{ color: isLive ? "#3EDB57" : "#FF3939" }}>{!isLive ? "Go Live" : "Live"}</span>
+            </button>
+        }
+        {
+            outputConnectionEstablished == 1 &&
+            <div style={{ cursor: "pointer", width: "10px" }} onClick={handleShowOutputOption} ref={iconRef}>
+                <SlOptionsVertical size={15} color='#B1B1B1' />
+
+
+            </div>
+        }
+    </div>
+    {
+        finaloutputLine &&
+        <div style={{ paddingLeft: "24px", paddingRight: "24px", textAlign: "left", alignItems: "flex-start", display: 'flex', flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-start", gap: "10px", }}>
+            {(outPutType == 'bible' && finaloutputLine) && <span style={{ listStyleType: "none", fontSize: '14px', fontWeight: "500", color: "#FF3939", textAlign: "left" }} onClick={() => { }}>{multipleselectedVerseArray.length > 0 ? getVerseText(multipleselectedVerseArray).ref : selectedVerseArray?.book_name + " " + selectedVerseArray?.chapter_number + ":" + selectedVerseArray?.verse_number + " (" + selectActiveVersion.toUpperCase() + ")"} </span>}
+            {finaloutputLine && <span style={{ fontSize: '14px', fontWeight: "600", color: "#FF3939", lineHeight: "1.3" }}>{(location.pathname == "/main/bible" || location.pathname == "/main/ew-graber") ? multipleselectedVerseArray.length > 0 ? getVerseText(multipleselectedVerseArray).text : selectedVerseArray?.text : finaloutputLine} </span>}
+        </div>
+    }
+
+    <div style={{ flex: outputConnectionEstablished }}></div>
+
+    {
+        //button
+        outputConnectionEstablished !== 1 &&
+        <div style={{ marginBottom: "20px" }}>
+            <button style={{ width: "164px", height: "53px", backgroundColor: "#FF3939", border: "none", borderRadius: "4px", cursor: "pointer", flex: 1 }} onClick={openConnectNowModal}>
+                <span style={{ color: "white" }}>Connect Now</span>
+            </button>
+        </div>
+    }
+    {showoutputOptions && (
+        <div ref={outputOptionsRef}>
+            <OutputOptionsMenu
+                posX={outputOptionsPosition.x}
+                posY={outputOptionsPosition.y}
+                setshowoutputOptions={setshowoutputOptions}
+                setoutputConnectionEstablished={setoutputConnectionEstablished}
+                setisLive={setisLive}
+                showoutputOptions={showoutputOptions}
+                outputOptionsRef={outputOptionsRef}
+                setreconnectingStatus={setreconnectingStatus}
+                iconRef={iconRef}
+
+            />
+        </div>
+    )}
+</div> */}

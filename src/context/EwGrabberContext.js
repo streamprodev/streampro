@@ -15,12 +15,17 @@ export function EwGrabberContextProvider({ children }) {
     const [ewGrabbedImage, setEwGrabberImage] = useState("")
     const [ewGrabbedScreen, setEwGrabberScreen] = useState("")
 
+    const [ewGrabbedBibleName, setEwGrabberBibleName] = React.useState('')
+    const [ewGrabbedBibleChapter, setEwGrabberBibleChapter] = React.useState('')
+    const [ewGrabbedBibleVerse, setEwGrabberBibleVerse] = React.useState('')
+    const [ewGrabbedBibleVersion, setEwGrabberBibleVersion] = React.useState('')
+
 
 
 
 
     return (
-        <EwGrabberContext.Provider value={{ isEwGrabberConnected, setIsEwGrabberConnected, ewGrabbedText, setEwGrabberText, ewGrabbedImage, setEwGrabberImage, ewGrabbedScreen, setEwGrabberScreen }}>
+        <EwGrabberContext.Provider value={{ isEwGrabberConnected, setIsEwGrabberConnected, ewGrabbedText, setEwGrabberText, ewGrabbedImage, setEwGrabberImage, ewGrabbedScreen, setEwGrabberScreen, ewGrabbedBibleName, setEwGrabberBibleName, ewGrabbedBibleChapter, setEwGrabberBibleChapter, ewGrabbedBibleVerse, setEwGrabberBibleVerse, ewGrabbedBibleVersion, setEwGrabberBibleVersion }}>
             {children}
         </EwGrabberContext.Provider>
     )
