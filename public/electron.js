@@ -1519,7 +1519,7 @@ ipcMain.on("activateEwGrabber", async function (event, arg) {
     // var pat = __dirname + "/resources/virtual_monitor_installer/usbmmidd.bat";
     // var pat = __dirname + "../../virtual_monitor_installer/usbmmidd.bat";
     console.log("Current directory:", pat);
-    event.sender.send("grabber-finished", pat);
+    event.sender.send("grabber-finished-test", pat);
 
     exec(`"${pat}"`, (error, stdout, stderr) => {
 
@@ -1567,11 +1567,12 @@ async function getScreenCount() {
 
 ipcMain.on("deactivateEwGrabber", function (event, arg) {
     isEwGrabberActive = false;
-    var pat = __dirname + "/virtual_monitor_installer/remove_screen.bat";
-    // var pat = path.join(app.getPath('documents'), 'StreamPro/virtual_monitor_installer/remove_screen.bat')
+    // var pat = __dirname + "/virtual_monitor_installer/remove_screen.bat";
+    var pat = path.join(app.getPath('documents'), 'StreamPro/virtual_monitor_installer/remove_screen.bat')
+    var pat = path.join(app.getPath('documents'), 'StreamPro/virtual_monitor_installer/remove_screen.bat')
     console.log("Current directoryclose :", pat);
 
-    exec(pat, (error, stdout, stderr) => {
+    exec(`"${pat}"`, (error, stdout, stderr) => {
 
         if (error) {
             console.error(`error: ${error.message}`);

@@ -10,7 +10,7 @@ import { useLocation } from 'react-router-dom';
 
 const { ipcRenderer } = window.require('electron');
 
-const OutputOptionsMenu = ({ posX, posY, setshowoutputOptions, setoutputConnectionEstablished, setisLive, setreconnectingStatus, showoutputOptions, outputOptionsRef, iconRef, setIsConnectNowModalOpen, isCurrentNowEdit, setisCurrentNowEdit, activeCarousel }) => {
+const OutputOptionsMenu = ({ posX, posY, setshowoutputOptions, setoutputConnectionEstablished, setisLive, setreconnectingStatus, showoutputOptions, outputOptionsRef, iconRef, setIsConnectNowModalOpen, isCurrentNowEdit, setisCurrentNowEdit, activeCarousel, setselectedSlide }) => {
 
     const { currentEditUuid, setcurrentEditUuid, bibleConnections, setbibleConnections, outputPathname } = usePreviewXOutput();
     // const { anchorPoint, show } = useContextMennu(type);
@@ -79,8 +79,9 @@ const OutputOptionsMenu = ({ posX, posY, setshowoutputOptions, setoutputConnecti
                 <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "12px", cursor: "pointer" }} onClick={() => {
                     const currentLocationConnections = bibleConnections.filter(x => x.key)
                     const removeKey = (activeCarousel[outputPathname]).uuid
-                    setbibleConnections(bibleConnections.filter(x => x.uuid != removeKey))
-                    console.log(removeKey)
+                    console.log(bibleConnections.filter(x => x.uuid != removeKey))
+                    setbibleConnections(prev => prev.filter(x => x.uuid != removeKey))
+                    console.log(removeKey, bibleConnections)
                     setshowoutputOptions(false)
                     if (currentLocationConnections.length == 1) {
                         setoutputConnectionEstablished(0)
@@ -100,6 +101,8 @@ const OutputOptionsMenu = ({ posX, posY, setshowoutputOptions, setoutputConnecti
                             style: { width: "500px", height: "20px", backgroundColor: "#A7FFB5", textAlign: "left" }
                         });
 
+                    } else {
+                        setselectedSlide(0)
                     }
                 }}>
                     <FiWifiOff size={14} color={"#FF0E48"} />

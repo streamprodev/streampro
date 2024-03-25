@@ -17,13 +17,14 @@ import { useRegistrationInfo } from '../../../context/RegistrationInfoContext';
 import { usePreviewXOutput } from '../../../context/PreviewXOutputContext';
 import LowerToast from '../../LowerToast';
 import { toast } from 'react-toastify';
+import GeneratingConnectionModal from './GeneratingConnectionModal';
 
 const { ipcRenderer } = window.require('electron');
 
 function ConnectionTypes() {
 
     const { registrationInfo, firestore } = useRegistrationInfo();
-    const { setexternalConnectionConnectionEstablished, setexternalConnectionUrl, setexternalConnectionPasscode, externalConnectionPasscode, isVmixStarted, setIsVmixStarted, isObsStarted, setIsObsStarted, isLightstreamStarted, setIsLightstreamStarted, isXsplitStarted, setIsXsplitStarted, isVmixExternalConnectionEnabled, setIsVmixExternalConnectionEnabled, isObsExternalConnectionEnabled, setIsObsExternalConnectionEnabled, isLightstreamExternalConnectionEnabled, setIsLightstreamExternalConnectionEnabled, isXsplitExternalConnectionEnabled, setIsXsplitExternalConnectionEnabled, copiedToaster, bibleConnections, setbibleConnections, setoutputConnectionEstablished, setisLive, setreconnectingStatus } = usePreviewXOutput();
+    const { setexternalConnectionConnectionEstablished, setexternalConnectionUrl, setexternalConnectionPasscode, externalConnectionPasscode, isVmixStarted, setIsVmixStarted, isObsStarted, setIsObsStarted, isLightstreamStarted, setIsLightstreamStarted, isXsplitStarted, setIsXsplitStarted, isVmixExternalConnectionEnabled, setIsVmixExternalConnectionEnabled, isObsExternalConnectionEnabled, setIsObsExternalConnectionEnabled, isLightstreamExternalConnectionEnabled, setIsLightstreamExternalConnectionEnabled, isXsplitExternalConnectionEnabled, setIsXsplitExternalConnectionEnabled, copiedToaster, bibleConnections, setbibleConnections, setoutputConnectionEstablished, setisLive, setreconnectingStatus, createConnectionLoading, setIsCreateConnectionLoading } = usePreviewXOutput();
 
 
     // const establishConnection = async (local = null) => {
@@ -97,6 +98,7 @@ function ConnectionTypes() {
     // }
 
 
+    // 
 
 
     return (
@@ -133,13 +135,13 @@ function ConnectionTypes() {
 
                                     </div>
                                 </div> :
-                                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
+                                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }} onClick={() => setIsVmixExternalConnectionEnabled(prev => !prev)}>
                                     {
                                         // isVmixExternalConnectionEnabled ?
                                         //     <MinusSquare size="14" color="#B1B1B1" onClick={() => setIsVmixExternalConnectionEnabled(false)} /> :
                                         //     <BiSquareRounded size="14" color="#B1B1B1" onClick={() => setIsVmixExternalConnectionEnabled(true)} />
                                     }
-                                    <input type='checkbox' onClick={() => setIsVmixExternalConnectionEnabled(prev => !prev)} value={isVmixExternalConnectionEnabled} />
+                                    <input type='checkbox' value={isVmixExternalConnectionEnabled} />
                                     <span style={{ fontWeight: "600", color: "#FFFFFF", fontSize: "14px", }}>Permit external control</span>
                                 </div>
                         }
@@ -175,6 +177,7 @@ function ConnectionTypes() {
 
                                     }
                                 } else {
+                                    setIsCreateConnectionLoading(true)
                                     ipcRenderer.send('createConnection', registrationInfo, isVmixExternalConnectionEnabled)
                                 }
                                 // setIsVmixStarted(prev => !prev)
@@ -201,8 +204,12 @@ function ConnectionTypes() {
                             </div>
                         </div>
                         <span style={{ fontWeight: "600", color: "#FFFFFF", fontSize: "14px", }}>Xsplit</span>
+                        <div style={{ height: "53px", padding: '20px 0', position: 'absolute', bottom: 0, }}>
+                            <span style={{ fontWeight: "600", color: "#FFFFFF", fontSize: "17px", }}> Coming soon</span>
 
-                        {
+                        </div>
+
+                        {/* {
                             isXsplitStarted ?
                                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10, position: 'relative' }}>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 2, }}>
@@ -225,13 +232,13 @@ function ConnectionTypes() {
                                     <input type='checkbox' onClick={() => setIsXsplitExternalConnectionEnabled(prev => !prev)} value={isXsplitExternalConnectionEnabled} />
                                     <span style={{ fontWeight: "600", color: "#FFFFFF", fontSize: "14px", }}>Permit external control</span>
                                 </div>
-                        }
-                        <div style={{ height: "53px", padding: '20px 0', position: 'absolute', bottom: 0, }}>
+                        } */}
+                        {/* <div style={{ height: "53px", padding: '20px 0', position: 'absolute', bottom: 0, }}>
                             <button style={{ width: "164px", height: "53px", backgroundColor: "#FF3939", border: "none", borderRadius: "4px", cursor: "not-allowed", flex: 1 }} onClick={() => { setIsXsplitStarted(prev => !prev) }} disabled>
                                 <span style={{ color: "white" }}>{isXsplitStarted ? "Turn Off" : "Enable"}</span>
                             </button>
 
-                        </div>
+                        </div> */}
 
                     </div>
                 </div>
@@ -252,8 +259,12 @@ function ConnectionTypes() {
                             </div>
                         </div>
                         <span style={{ fontWeight: "600", color: "#FFFFFF", fontSize: "14px", }}>OBS</span>
+                        <div style={{ height: "53px", padding: '20px 0', position: 'absolute', bottom: 0, }}>
+                            <span style={{ fontWeight: "600", color: "#FFFFFF", fontSize: "17px", }}> Coming soon</span>
 
-                        {
+                        </div>
+
+                        {/* {
                             isObsStarted ?
                                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10, position: 'relative' }}>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 2, }}>
@@ -276,13 +287,13 @@ function ConnectionTypes() {
                                     <input type='checkbox' onClick={() => setIsObsExternalConnectionEnabled(prev => !prev)} value={isObsExternalConnectionEnabled} />
                                     <span style={{ fontWeight: "600", color: "#FFFFFF", fontSize: "14px", }}>Permit external control</span>
                                 </div>
-                        }
-                        <div style={{ height: "53px", padding: '20px 0', position: 'absolute', bottom: 0, }}>
+                        } */}
+                        {/* <div style={{ height: "53px", padding: '20px 0', position: 'absolute', bottom: 0, }}>
                             <button style={{ width: "164px", height: "53px", backgroundColor: "#FF3939", border: "none", borderRadius: "4px", cursor: "not-allowed", flex: 1 }} onClick={() => { setIsObsStarted(prev => !prev) }} disabled>
                                 <span style={{ color: "white" }}>{isObsStarted ? "Turn Off" : "Enable"}</span>
                             </button>
 
-                        </div>
+                        </div> */}
 
                     </div>
                 </div>
@@ -302,7 +313,12 @@ function ConnectionTypes() {
                         </div>
                         <span style={{ fontWeight: "600", color: "#FFFFFF", fontSize: "14px", }}>Lightstream</span>
 
-                        {
+                        <div style={{ height: "53px", padding: '20px 0', position: 'absolute', bottom: 0, }}>
+                            <span style={{ fontWeight: "600", color: "#FFFFFF", fontSize: "17px", }}> Coming soon</span>
+
+                        </div>
+
+                        {/* {
                             isLightstreamStarted ?
                                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10, position: 'relative' }}>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 2, }}>
@@ -325,18 +341,18 @@ function ConnectionTypes() {
                                     <input type='checkbox' onClick={() => setIsLightstreamExternalConnectionEnabled(prev => !prev)} value={isLightstreamExternalConnectionEnabled} />
                                     <span style={{ fontWeight: "600", color: "#FFFFFF", fontSize: "14px", }}>Permit external control</span>
                                 </div>
-                        }
-                        <div style={{ height: "53px", padding: '20px 0', position: 'absolute', bottom: 0, }}>
+                        } */}
+                        {/* <div style={{ height: "53px", padding: '20px 0', position: 'absolute', bottom: 0, }}>
                             <button style={{ width: "164px", height: "53px", backgroundColor: "#FF3939", border: "none", borderRadius: "4px", cursor: "not-allowed", flex: 1 }} onClick={() => { setIsLightstreamStarted(prev => !prev) }} disabled>
                                 <span style={{ color: "white" }}>{isLightstreamStarted ? "Turn Off" : "Enable"}</span>
                             </button>
 
-                        </div>
+                        </div> */}
 
                     </div>
                 </div>
             </div>
-
+            <GeneratingConnectionModal loading={createConnectionLoading} />
         </div>
 
 

@@ -322,7 +322,7 @@ const ConnectNowModal = ({ isEdit = false }) => {
                     setTimeout(() => {
                         setPage(5)
 
-                    }, 2000)
+                    }, 1000)
 
                 })
                 .catch(err => {

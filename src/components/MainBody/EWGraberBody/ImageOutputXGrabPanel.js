@@ -34,7 +34,7 @@ function ImageOutputXGrabPanel() {
     }
 
     const updateGrabbedTest = (event, text) => {
-        // console.log(text)
+        console.log(text)
     }
     useEffect(() => {
         ipcRenderer.on('grabber-finished-test', updateGrabbedTest)

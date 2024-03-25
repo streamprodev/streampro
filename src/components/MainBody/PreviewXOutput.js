@@ -145,7 +145,7 @@ function PreviewXOutput() {
         if (typeof s !== 'string') return ''
         return s.charAt(0).toUpperCase() + s.slice(1)
     }
-
+    // console.log(bibleConnections)
     useEffect(() => {
         if (location.pathname == "/main/song") {
             setoutPutType('song')
@@ -189,8 +189,8 @@ function PreviewXOutput() {
     const carouselRef = useRef(null);
 
     useEffect(() => {
-        // console.log(activeCarousel)
-    }, [activeCarousel])
+        console.log(bibleConnections)
+    }, [bibleConnections])
 
     useEffect(() => {
         // console.log(showoutputOptions)
@@ -198,15 +198,15 @@ function PreviewXOutput() {
         // console.log(location.pathname)
         // console.log(bibleConnections.filter(x => x.path == location.pathname && x.key));
 
-        setactiveLine(-1);
-        setmultipleselectedVerseArray([])
-        setselectedVerseArray({})
-        setoutputLine('')
+        // setactiveLine(-1);
+        // setmultipleselectedVerseArray([])
+        // setselectedVerseArray({})
+        // setoutputLine('')
         if (!isEwGrabberConnected) {
             setEwGrabberText('')
             setEwGrabberImage('')
         }
-        console.log('clear')
+        // console.log('clear')
 
 
     }, [location.pathname])
@@ -268,19 +268,7 @@ function PreviewXOutput() {
                 </div>)
                 :
                 (<div className='finaloutput-carousel'>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginLeft: "24px", gap: "5px", marginRight: "24px", padding: "18px 0px" }}>
-                        <div style={{ display: "flex", justifyContent: "flex-start", alignItems: "flex-start", gap: "5px" }}>
-                            <span style={{ fontSize: '14px', fontWeight: "600", color: "#FFFFFF" }}>{!outputConnectionEstablished ? "Output(Not Connected)" : "Output (" + capitalize(outputConnectionSoftware) + " - " + activeCarousel[outputPathname]?.key?._text + ")"} </span>
-                            <div id={(reconnectingStatus && outputConnectionEstablished) && 'blink'} style={{ height: "11px", width: "11px", borderRadius: "50%", backgroundColor: !outputConnectionEstablished ? "#FF3939" : reconnectingStatus ? "yellow" : "#3EDB57", marginTop: "5px" }}></div>
-                        </div>
 
-                        <div style={{ cursor: "pointer", width: "10px" }} onClick={handleShowOutputOption} ref={iconRef}>
-                            <SlOptionsVertical size={15} color='#B1B1B1' />
-
-
-                        </div>
-
-                    </div>
                     <Carousel
                         ref={carouselRef}
                         onChange={(index, item) => {
@@ -330,12 +318,35 @@ function PreviewXOutput() {
                             );
                         }}
                     >
+
                         {
                             bibleConnections.filter(x => x.path == outputPathname && x.key).map((item, index) => {
                                 // setactiveCarousel(item)
                                 return (
                                     <div key={item.key._attributes.key} style={{ display: "flex", justifyContent: "center", alignItems: "flex-start", flex: 1, position: 'relative' }}>
+
                                         <div className='' style={{ width: '100%' }}>
+                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginLeft: "24px", gap: "5px", marginRight: "24px", padding: "18px 0px" }}>
+                                                <div style={{ display: "flex", justifyContent: "flex-start", alignItems: "flex-start", gap: "5px" }}>
+                                                    <span style={{ fontSize: '14px', fontWeight: "600", color: "#FFFFFF" }}>{!outputConnectionEstablished ? "Output(Not Connected)" : "Output (" + capitalize(outputConnectionSoftware) + " - " + activeCarousel[outputPathname]?.key?._text + ")"} </span>
+                                                    <div id={(reconnectingStatus && outputConnectionEstablished) && 'blink'} style={{ height: "11px", width: "11px", borderRadius: "50%", backgroundColor: !outputConnectionEstablished ? "#FF3939" : reconnectingStatus ? "yellow" : "#3EDB57", marginTop: "5px" }}></div>
+                                                </div>
+
+                                                <div style={{ cursor: "pointer", width: "10px" }} onClick={(e) => {
+                                                    setactiveCarousel(prev => {
+                                                        return { ...prev, [outputPathname]: bibleConnections.find(x => x.key._attributes.key == item.key._attributes.key) }
+                                                    })
+                                                    setTimeout(() => {
+                                                        handleShowOutputOption(e)
+
+                                                    }, 500);
+                                                }} ref={iconRef}>
+                                                    <SlOptionsVertical size={15} color='#B1B1B1' />
+
+
+                                                </div>
+
+                                            </div>
 
 
                                             <div style={{ paddingLeft: "24px", paddingRight: "24px", textAlign: "left", alignItems: "flex-start", display: 'flex', flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-start", gap: "10px", }}>
@@ -373,6 +384,7 @@ function PreviewXOutput() {
                                 isCurrentNowEdit={isCurrentNowEdit}
                                 setisCurrentNowEdit={setisCurrentNowEdit}
                                 activeCarousel={activeCarousel}
+                                setselectedSlide={setselectedSlide}
 
                             />
                         </div>
