@@ -12,7 +12,7 @@ const { ipcRenderer } = window.require('electron');
 
 const OutputOptionsMenu = ({ posX, posY, setshowoutputOptions, setoutputConnectionEstablished, setisLive, setreconnectingStatus, showoutputOptions, outputOptionsRef, iconRef, setIsConnectNowModalOpen, isCurrentNowEdit, setisCurrentNowEdit, activeCarousel, setselectedSlide }) => {
 
-    const { currentEditUuid, setcurrentEditUuid, bibleConnections, setbibleConnections, outputPathname } = usePreviewXOutput();
+    const { currentEditUuid, setcurrentEditUuid, bibleConnections, setbibleConnections, outputPathname, setactiveCarousel } = usePreviewXOutput();
     // const { anchorPoint, show } = useContextMennu(type);
 
     const location = useLocation();
@@ -80,9 +80,10 @@ const OutputOptionsMenu = ({ posX, posY, setshowoutputOptions, setoutputConnecti
                     const currentLocationConnections = bibleConnections.filter(x => x.key)
                     const removeKey = (activeCarousel[outputPathname]).uuid
                     console.log(bibleConnections.filter(x => x.uuid != removeKey))
+                    // console.log(removeKey, bibleConnections)
                     setbibleConnections(prev => prev.filter(x => x.uuid != removeKey))
-                    console.log(removeKey, bibleConnections)
                     setshowoutputOptions(false)
+
                     if (currentLocationConnections.length == 1) {
                         setoutputConnectionEstablished(0)
                         setisLive(false)
@@ -102,8 +103,14 @@ const OutputOptionsMenu = ({ posX, posY, setshowoutputOptions, setoutputConnecti
                         });
 
                     } else {
-                        setselectedSlide(0)
+                        setselectedSlide(prev => prev + 1)
+
+                        // setactiveCarousel(prev => {
+                        //     console.log(bibleConnections.find(x => x.key._attributes.key == removeKey))
+                        //     return { ...prev, [outputPathname]: bibleConnections.find(x => x.key._attributes.key != removeKey) }
+                        // })
                     }
+
                 }}>
                     <FiWifiOff size={14} color={"#FF0E48"} />
                     <span style={{ fontSize: '12px', fontWeight: "500", color: "#FF0E48" }}>Disconnect output</span>

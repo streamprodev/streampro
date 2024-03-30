@@ -25,7 +25,7 @@ function ImageOutputXGrabPanel() {
 
     const updateGrabbedImage = (event, arrayBuffer) => {
 
-        setEwGrabberImage(btoa(String.fromCharCode(...new Uint8Array(arrayBuffer))))
+        // setEwGrabberImage(btoa(String.fromCharCode(...new Uint8Array(arrayBuffer))))
     }
 
     const updateGrabbedScreen = (event, screens) => {
@@ -53,6 +53,13 @@ function ImageOutputXGrabPanel() {
 
     useEffect(() => {
         console.log(ewGrabbedText)
+        if (!ewGrabbedText) {
+            setEwGrabberBibleName('')
+            setEwGrabberBibleChapter('')
+            setEwGrabberBibleVerse('')
+            setEwGrabberBibleVersion('')
+            return;
+        }
         if (ewGrabbedText?.length == 0) {
             setEwGrabberBibleName('')
             setEwGrabberBibleChapter('')

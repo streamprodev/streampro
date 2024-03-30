@@ -48,7 +48,7 @@
     "react-timer-hook": "^3.0.6",
     "react-toastify": "^9.1.3",
     "react-xml-parser": "^1.1.8",
-    "screenshot-desktop": "^1.15.0",
+    "screenshot-desktop": "1.14.1",
     "sharp": "^0.33.2",
     "sqlite3": "^5.1.6",
     "styled-components": "^6.0.1",
@@ -97,6 +97,10 @@
     "extraResources": [
       "vmix-assets",
       "virtual_monitor_installer"
+    ],
+    "asarUnpack": [
+      "node_modules/screenshot-desktop/lib/win32/screenCapture_1.3.2.bat",
+      "node_modules/screenshot-desktop/lib/win32/app.manifest"
     ]
   },
   "eslintConfig": {

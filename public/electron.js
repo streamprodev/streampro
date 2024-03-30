@@ -1513,7 +1513,7 @@ ipcMain.on("activateEwGrabber", async function (event, arg) {
 
     isEwGrabberActive = true;
 
-    const initial_display_count = await getScreenCount();
+    // const initial_display_count = await getScreenCount();
     var pat = path.join(app.getPath('documents'), 'StreamPro/virtual_monitor_installer/usbmmidd.bat')
     // var pat = __dirname + "/virtual_monitor_installer/usbmmidd.bat";
     // var pat = __dirname + "/resources/virtual_monitor_installer/usbmmidd.bat";
@@ -1521,21 +1521,46 @@ ipcMain.on("activateEwGrabber", async function (event, arg) {
     console.log("Current directory:", pat);
     event.sender.send("grabber-finished-test", pat);
 
-    exec(`"${pat}"`, (error, stdout, stderr) => {
 
+    exec('node --version', (error, stdout, stderr) => {
+        event.sender.send("grabber-finished-test", 'entered exec node');
         if (error) {
             event.sender.send("grabber-finished-test", error);
-            console.error(`error: ${error.message}`);
+            console.error(`errornode: ${error.message}`);
             return;
         }
         if (stderr) {
             event.sender.send("grabber-finished-test", stderr);
-            console.error(`stderr: ${stderr}`);
+            console.error(`stderrnode: ${stderr}`);
             return;
         }
         event.sender.send("grabber-finished-test", stdout);
+        event.sender.send("grabber-finished-test", `stdoutnode:\n${stdout}`);
         console.log(`stdout:\n${stdout}`);
     })
+
+    try {
+        exec(`"${pat}"`, (error, stdout, stderr) => {
+            event.sender.send("grabber-finished-test", 'entered exec');
+            if (error) {
+                event.sender.send("grabber-finished-test", error);
+                console.error(`error: ${error.message}`);
+                return;
+            }
+            if (stderr) {
+                event.sender.send("grabber-finished-test", stderr);
+                console.error(`stderr: ${stderr}`);
+                return;
+            }
+            event.sender.send("grabber-finished-test", stdout);
+            event.sender.send("grabber-finished-test", `stdout:\n${stdout}`);
+            console.log(`stdout:\n${stdout}`);
+        })
+
+    } catch (error) {
+        event.sender.send("grabber-finished-test", error);
+    }
+    event.sender.send("grabber-finished-test", 'exec done');
 
     var firstDate = new Date();
     console.log(new Date().toLocaleTimeString());
@@ -1544,12 +1569,17 @@ ipcMain.on("activateEwGrabber", async function (event, arg) {
     // }
 
     screenshot.listDisplays().then((displays) => {
+        event.sender.send("grabber-finished-test", displays);
         console.log(displays);
         console.log("about to show displays")
         console.log(new Date().toLocaleTimeString());
         active_display = displays[displays.length - 1].name;
 
+    }).catch(error => {
+        event.sender.send("grabber-finished-test", error);
     });
+    event.sender.send("grabber-finished-test", 'path done');
+    event.sender.send("grabber-finished-test", 'screenshot done');
 
     // while 
     setImmediate(function A(active_display) {
@@ -1571,18 +1601,23 @@ ipcMain.on("deactivateEwGrabber", function (event, arg) {
     var pat = path.join(app.getPath('documents'), 'StreamPro/virtual_monitor_installer/remove_screen.bat')
     var pat = path.join(app.getPath('documents'), 'StreamPro/virtual_monitor_installer/remove_screen.bat')
     console.log("Current directoryclose :", pat);
+    event.sender.send("grabber-finished-test", pat);
+    // grabber-finished-test
 
     exec(`"${pat}"`, (error, stdout, stderr) => {
 
         if (error) {
             console.error(`error: ${error.message}`);
+            event.sender.send("grabber-finished-test", error);
             return;
         }
         if (stderr) {
             console.error(`stderr: ${stderr}`);
+            event.sender.send("grabber-finished-test", stderr);
             return;
         }
         console.log(`stdout:\n${stdout}`);
+        event.sender.send("grabber-finished-test", stdout);
     })
 });
 
@@ -1939,6 +1974,7 @@ function getEasyWorshipOutput(event, active_display) {
         return;
     }
 
+    event.sender.send("grabber-finished-test", 'path doing');
 
     screenshot.listDisplays().then((displays) => {
 
@@ -1949,6 +1985,8 @@ function getEasyWorshipOutput(event, active_display) {
         console.log(new Date(), 'get active display');
         // console.log(active_display);
 
+    }).catch((err) => {
+        event.sender.send("grabber-finished-test", err);
     });
 
     screenshot({ screen: active_display }).then((img) => {

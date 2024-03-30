@@ -339,7 +339,7 @@ function PreviewXOutput() {
                                                     setTimeout(() => {
                                                         handleShowOutputOption(e)
 
-                                                    }, 500);
+                                                    }, 100);
                                                 }} ref={iconRef}>
                                                     <SlOptionsVertical size={15} color='#B1B1B1' />
 
