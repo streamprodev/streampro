@@ -75,6 +75,8 @@ export function PreviewXOutputContextProvider({ children }) {
     const [createConnectionLoading, setIsCreateConnectionLoading] = useState(false);
     const [songLine, setSongLine] = useState(-1);
     const [bibleLine, setBibleLine] = useState(-1);
+    const [selectedSlide, setselectedSlide] = useState(0);
+    const carouselRef = useRef(null);
 
 
 
@@ -126,6 +128,7 @@ export function PreviewXOutputContextProvider({ children }) {
 
     useEffect(() => {
         ipcRenderer.on('vmixDisconected', vmixDisconected)
+        ipcRenderer.on('vmixDisconectedMulti', vmixDisconectedMulti)
         // ipcRenderer.on('setReconnecting', setReconnecting)
         ipcRenderer.on('setngrokUrlError', setngrokUrlErrorf);
         ipcRenderer.on('setngrokUrl', setngrokUrlf);
@@ -139,6 +142,7 @@ export function PreviewXOutputContextProvider({ children }) {
             ipcRenderer.removeListener('setngrokStatus', setngrokStatusf);
             ipcRenderer.removeListener('closeNgrokSession', closeNgrokSessionf);
             ipcRenderer.removeListener('vmixDisconected', vmixDisconected)
+            ipcRenderer.removeListener('vmixDisconectedMulti', vmixDisconectedMulti)
             ipcRenderer.removeListener('updateMessage', updateMessage)
             // ipcRenderer.removeListener('setReconnecting', setReconnecting)
         }
@@ -216,8 +220,11 @@ export function PreviewXOutputContextProvider({ children }) {
                     const liveBibleConnections = bibleConnections.filter(x => x.path == "/main/bible" && x.key);
                     if (liveBibleConnections.length > 0) {
                         liveBibleConnections.forEach(x => {
-                            const data = { outputUrl, outputPasscode, finaloutputLine, selectedBook, selectedChapter, searchVerse, selectedVerseArray: clone, selectActiveVersion, path: x.path, key: x.key._attributes.key }
-                            ipcRenderer.invoke('goLiveWMulti', data).then(res => { }).catch(err => { console.log(err) })
+                            if (!x.reconnecting) {
+                                const data = { outputUrl, outputPasscode, finaloutputLine, selectedBook, selectedChapter, searchVerse, selectedVerseArray: clone, selectActiveVersion, path: x.path, key: x.key._attributes.key, passcode: x.passcode, uuid: x.uuid }
+                                ipcRenderer.invoke('goLiveWMulti', data).then(res => { }).catch(err => { console.log(err) })
+
+                            }
                         })
                     }
                     // ipcRenderer.invoke('goLiveWBible', data).then(res => { }).catch(err => { console.log(err) })
@@ -230,9 +237,12 @@ export function PreviewXOutputContextProvider({ children }) {
             const liveBibleConnections = bibleConnections.filter(x => x.path == "/main/song" && x.key);
             if (liveBibleConnections.length > 0) {
                 liveBibleConnections.forEach(x => {
-                    const data = { outputUrl, outputPasscode, finaloutputLine, path: x.path, key: x.key._attributes.key }
-                    // const data = { outputUrl, outputPasscode, finaloutputLine, selectedBook, selectedChapter, searchVerse, selectedVerseArray: clone, selectActiveVersion, path: x.path, key: x.key._attributes.key }
-                    ipcRenderer.invoke('goLiveWMulti', data).then(res => { }).catch(err => { console.log(err) })
+                    if (!x.reconnecting) {
+                        const data = { outputUrl, outputPasscode, finaloutputLine, path: x.path, key: x.key._attributes.key, passcode: x.passcode, uuid: x.uuid }
+                        // const data = { outputUrl, outputPasscode, finaloutputLine, selectedBook, selectedChapter, searchVerse, selectedVerseArray: clone, selectActiveVersion, path: x.path, key: x.key._attributes.key }
+                        ipcRenderer.invoke('goLiveWMulti', data).then(res => { }).catch(err => { console.log(err) })
+
+                    }
                 })
             }
 
@@ -314,6 +324,33 @@ export function PreviewXOutputContextProvider({ children }) {
             style: { width: "500px", backgroundColor: "#FF3939", textAlign: "left", height: "10px", margin: "auto", color: "#ffffff" }
         });
     }
+    const vmixDisconectedMulti = (connection) => {
+        // setreconnectingStatus(false)
+        if (bibleConnections.filter(x => x.uuid !== connection.uuid).length === 0) {
+            setoutputConnectionEstablished(0)
+            setisLive(false)
+        }
+        // console.log('bibleConnections', bibleConnections.filter((x) => x.uuid !== connection.uuid))
+        setbibleConnections((c) => {
+            return bibleConnections.filter((x) => x.uuid !== connection.uuid)
+        })
+        if (carouselRef.current) {
+            carouselRef.current.goToSlide(0)
+        }
+        toast(<LowerToast status={'error'} message={'Output Disconnected'} />, {
+            position: "bottom-center",
+            autoClose: 2000,
+            hideProgressBar: true,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "light",
+            style: { width: "500px", backgroundColor: "#FF3939", textAlign: "left", height: "10px", margin: "auto", color: "#ffffff" }
+        });
+        setselectedSlide(selectedSlide - 1)
+
+    }
 
 
     const openConnectNowModal = () => {
@@ -374,13 +411,22 @@ export function PreviewXOutputContextProvider({ children }) {
         const firestore = getFirestore(initializeApp(firebaseConfig, new Date().toJSON()))
         const ref = collection(firestore, "Remote Connections") // Firebase creates this automatically
 
+        const created_at = (new Date()).toISOString();
         let data = {
             url: contents.url,
-            password: contents.password
+            password: contents.password,
+            created_at: contents.created_at,
+            key: contents.key,
+            passcode: contents.passcode,
+            tcpUrl: contents.tcpUrl,
+            // connection: contents.connection
         }
+        console.log(data)
 
         try {
-            addDoc(ref, data)
+            if (contents.url != 'http://127.0.0.1:8088') {
+                addDoc(ref, data).then(res => { console.log(res) }).then(res => { console.log(res) }).catch(err => { console.log(err) })
+            }
         } catch (err) {
             console.log(err)
         }
@@ -421,6 +467,7 @@ export function PreviewXOutputContextProvider({ children }) {
         setexternalConnectionPasscode('')
         setexternalConnectionUrl('')
         closeGenerateURLModal()
+        setIsVmixStarted(false)
         // pause()
         ipcRenderer.send('closengrok', 'Session closed successfully')
         setexternalConnectionConnectionEstablished(0)
@@ -461,7 +508,7 @@ export function PreviewXOutputContextProvider({ children }) {
 
     return (
         <PreviewXOutputContext.Provider value={{
-            ngrokUrlError, setngrokUrlError, ngrokStatus, setngrokStatus, outputOptionsPosition, setoutputOptionsPosition, showoutputOptions, setshowoutputOptions, isLive, setisLive, externalConnectionConnectionEstablished, setexternalConnectionConnectionEstablished, externalConnectionPasscode, setexternalConnectionPasscode, externalConnectionUrl, setexternalConnectionUrl, outputConnectionEstablished, setoutputConnectionEstablished, outputConnectionSoftware, setoutputConnectionSoftware, outputPasscode, setoutputPasscode, outputUrl, setoutputUrl, finaloutputLine, setfinaloutputLine, outputLine, setoutputLine, seconds, minutes, hours, days, isRunning, start, pause, reset, copiedToaster, vmixDisconected, isConnectNowModalOpen, setIsConnectNowModalOpen, isGenerateURLModalOpen, setisGenerateURLModalOpen, outputOptionsRef, handleShowOutputOption, closeConnectNowModal, closeGenerateURLModal, reconnectingStatus, setreconnectingStatus, generatereconnectingStatus, setgeneratereconnectingStatus, selectedVmixInputKey, setselectedVmixInputKey, isVmixStarted, setIsVmixStarted, isObsStarted, setIsObsStarted, isLightstreamStarted, setIsLightstreamStarted, isXsplitStarted, setIsXsplitStarted, isVmixExternalConnectionEnabled, setIsVmixExternalConnectionEnabled, isObsExternalConnectionEnabled, setIsObsExternalConnectionEnabled, isLightstreamExternalConnectionEnabled, setIsLightstreamExternalConnectionEnabled, isXsplitExternalConnectionEnabled, setIsXsplitExternalConnectionEnabled, bibleConnections, setbibleConnections, songConnections, setsongConnections, connectionEstablished, setConnectionEstablished, currentEditUuid, setcurrentEditUuid, currentLocationPathname, setcurrentLocationPathname, isCurrentNowEdit, setisCurrentNowEdit, activeCarousel, setactiveCarousel, outputPathname, setoutputPathname, createConnectionLoading, setIsCreateConnectionLoading
+            ngrokUrlError, setngrokUrlError, ngrokStatus, setngrokStatus, outputOptionsPosition, setoutputOptionsPosition, showoutputOptions, setshowoutputOptions, isLive, setisLive, externalConnectionConnectionEstablished, setexternalConnectionConnectionEstablished, externalConnectionPasscode, setexternalConnectionPasscode, externalConnectionUrl, setexternalConnectionUrl, outputConnectionEstablished, setoutputConnectionEstablished, outputConnectionSoftware, setoutputConnectionSoftware, outputPasscode, setoutputPasscode, outputUrl, setoutputUrl, finaloutputLine, setfinaloutputLine, outputLine, setoutputLine, seconds, minutes, hours, days, isRunning, start, pause, reset, copiedToaster, vmixDisconected, isConnectNowModalOpen, setIsConnectNowModalOpen, isGenerateURLModalOpen, setisGenerateURLModalOpen, outputOptionsRef, handleShowOutputOption, closeConnectNowModal, closeGenerateURLModal, reconnectingStatus, setreconnectingStatus, generatereconnectingStatus, setgeneratereconnectingStatus, selectedVmixInputKey, setselectedVmixInputKey, isVmixStarted, setIsVmixStarted, isObsStarted, setIsObsStarted, isLightstreamStarted, setIsLightstreamStarted, isXsplitStarted, setIsXsplitStarted, isVmixExternalConnectionEnabled, setIsVmixExternalConnectionEnabled, isObsExternalConnectionEnabled, setIsObsExternalConnectionEnabled, isLightstreamExternalConnectionEnabled, setIsLightstreamExternalConnectionEnabled, isXsplitExternalConnectionEnabled, setIsXsplitExternalConnectionEnabled, bibleConnections, setbibleConnections, songConnections, setsongConnections, connectionEstablished, setConnectionEstablished, currentEditUuid, setcurrentEditUuid, currentLocationPathname, setcurrentLocationPathname, isCurrentNowEdit, setisCurrentNowEdit, activeCarousel, setactiveCarousel, outputPathname, setoutputPathname, createConnectionLoading, setIsCreateConnectionLoading, setselectedSlide, selectedSlide, carouselRef
         }}>
             {children}
         </PreviewXOutputContext.Provider>

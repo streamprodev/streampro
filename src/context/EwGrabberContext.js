@@ -20,7 +20,25 @@ export function EwGrabberContextProvider({ children }) {
     const [ewGrabbedBibleVerse, setEwGrabberBibleVerse] = React.useState('')
     const [ewGrabbedBibleVersion, setEwGrabberBibleVersion] = React.useState('')
 
+    useEffect(() => {
+        ipcRenderer.on('grabber-finished-image', updateGrabbedImage)
+        return () => {
+            ipcRenderer.removeListener('grabber-finished-image', updateGrabbedImage);
+        }
+    }, [ewGrabbedScreen]);
 
+
+
+
+
+    const updateGrabbedImage = (event, arrayBuffer) => {
+        console.log(ewGrabbedScreen, 'scghg');
+        setEwGrabberImage(arrayBuffer)
+        if (ewGrabbedScreen > 1) {
+
+        }
+        // setEwGrabberImage(btoa(String.fromCharCode(...new Uint8Array(arrayBuffer))))
+    }
 
 
 

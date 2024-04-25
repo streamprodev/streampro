@@ -7,7 +7,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import LowerToast from './LowerToast';
 import axios from 'axios';
 import { initializeApp } from "firebase/app"
-import { getDocs, collection, query, where, getFirestore } from "@firebase/firestore"
+import { getDocs, collection, query, where, getFirestore, orderBy } from "@firebase/firestore"
 import { usePreviewXOutput } from '../context/PreviewXOutputContext';
 import { useRegistrationInfo } from '../context/RegistrationInfoContext';
 import SelectVmixInput from './SelectVmixInput';
@@ -22,7 +22,7 @@ const ConnectNowModal = ({ isEdit = false }) => {
     const location = useLocation();
 
 
-    const { isConnectNowModalOpen, closeConnectNowModal, outputUrl, setoutputUrl, outputPasscode, setoutputPasscode, outputConnectionSoftware, setoutputConnectionSoftware, outputConnectionEstablished, setoutputConnectionEstablished, setisLive, selectedVmixInputKey, setselectedVmixInputKey, connectionEstablished, setConnectionEstablished, currentEditUuid, setcurrentEditUuid, bibleConnections, setbibleConnections, songConnections, setsongConnections, currentLocationPathname, setcurrentLocationPathname, isCurrentNowEdit, setisCurrentNowEdit, activeCarousel, setactiveCarousel, outputPathname } = usePreviewXOutput();
+    const { isConnectNowModalOpen, closeConnectNowModal, outputUrl, setoutputUrl, outputPasscode, setoutputPasscode, outputConnectionSoftware, setoutputConnectionSoftware, outputConnectionEstablished, setoutputConnectionEstablished, setisLive, selectedVmixInputKey, setselectedVmixInputKey, connectionEstablished, setConnectionEstablished, currentEditUuid, setcurrentEditUuid, bibleConnections, setbibleConnections, songConnections, setsongConnections, currentLocationPathname, setcurrentLocationPathname, isCurrentNowEdit, setisCurrentNowEdit, activeCarousel, setactiveCarousel, outputPathname, carouselRef } = usePreviewXOutput();
     useEffect(() => {
         ipcRenderer.on('getConnectionUrlData', getConnectionUrlData)
         ipcRenderer.on('getavalaibleVmixInputs', getavalaibleVmixInputs)
@@ -116,6 +116,7 @@ const ConnectNowModal = ({ isEdit = false }) => {
 
     const getavalaibleVmixInputs = (event, data) => {
         if (data) {
+            console.log(data)
             const jsonData = xmlJs.xml2json(data, { compact: true, spaces: 4 });
             console.log(JSON.parse(jsonData).vmix.inputs.input)
             setavalaibleInputs(JSON.parse(jsonData).vmix.inputs.input.filter(x => x._attributes.type == 'Xaml'))
@@ -202,7 +203,7 @@ const ConnectNowModal = ({ isEdit = false }) => {
             const firestore = getFirestore(initializeApp(firebaseConfig, new Date().toJSON()))
 
             const collection_ref = collection(firestore, 'Remote Connections')
-            const q = query(collection_ref, where("password", "==", outputPasscode))
+            const q = query(collection_ref, where("password", "==", outputPasscode), orderBy('created_at', 'desc'))
             const doc_refs = await getDocs(q);
             const res = []
 
@@ -265,12 +266,15 @@ const ConnectNowModal = ({ isEdit = false }) => {
         console.log(data, "data")
         // console.log(location)
         var url = outputUrl;
+        var local = true;
+        var initial = {};
         var passcode = outputPasscode
         if (data.row && data.row != undefined) {
             url = data.row.url
             passcode = data.row.passcode
             setoutputUrl(data.row.url)
         } else {
+            local = false;
             const firebaseConfig = {
                 apiKey: registrationInfo.firestore_apikey,
                 projectId: registrationInfo.firestore_projectid,
@@ -281,7 +285,7 @@ const ConnectNowModal = ({ isEdit = false }) => {
             const firestore = getFirestore(initializeApp(firebaseConfig, new Date().toJSON()))
 
             const collection_ref = collection(firestore, 'Remote Connections')
-            const q = query(collection_ref, where("password", "==", outputPasscode))
+            const q = query(collection_ref, where("password", "==", outputPasscode), orderBy('created_at', 'desc'))
             const doc_refs = await getDocs(q);
             const res = []
 
@@ -293,22 +297,24 @@ const ConnectNowModal = ({ isEdit = false }) => {
             })
 
             if (res.length > 0) {
-                const initial = res[0];
+                initial = res[0];
                 url = initial.url
                 setoutputUrl(url)
+                console.log(initial)
             }
 
         }
-        console.log({ outputPasscode, outputUrl: url });
+        const uuid = uuidv4();
+        console.log({ outputPasscode, outputUrl: url, passcode: initial.passcode });
 
         try {
-            ipcRenderer.invoke('connectVmix', { outputPasscode, outputUrl: url })
+            ipcRenderer.invoke('connectVmix', { outputPasscode, outputUrl: url, passcode: initial.passcode, uuid, tcpUrl: initial.tcpUrl, local, path: outputPathname })
                 .then(res => {
                     // setoutputConnectionEstablished(1)
                     // console.log(currentLocationPathname)
                     // console.log(location.pathname)
-                    const uuid = uuidv4();
-                    const currentEditConnection = { uuid: uuid, outputUrl: url, outputPasscode: outputPasscode ?? passcode, path: outputPathname };
+
+                    const currentEditConnection = { uuid: uuid, outputUrl: url, outputPasscode: outputPasscode ?? passcode, path: outputPathname, passcode: initial.passcode };
                     setcurrentEditUuid(currentEditConnection)
                     // if (location.pathname == '/main/bible') {
                     //     setbibleConnections((prev) => [...prev, currentEditConnection])
@@ -317,6 +323,9 @@ const ConnectNowModal = ({ isEdit = false }) => {
 
                     // }
                     setbibleConnections((prev) => [...prev, currentEditConnection])
+                    if (carouselRef.current) {
+                        carouselRef.current.goToSlide(bibleConnections.length - 1)
+                    }
                     ipcRenderer.send('getavalaibleVmixInputsInitiate', currentEditConnection);
                     setConnectionEstablished(true)
                     setTimeout(() => {

@@ -20,12 +20,19 @@ function ImageOutputXGrabPanel() {
 
     const updateGrabbedText = (event, text) => {
         setEwGrabberText(text)
+        console.log(text)
+        const pattern = /^(\d+)\s+([A-Za-z\s]+)\s+(\d+):(\d+)\s+\((\w+)\)$/;
+        const match = text.match(pattern);
+        console.log(match);
         // setEwGrabberImage(ewGrabbedImage)
     }
 
     const updateGrabbedImage = (event, arrayBuffer) => {
 
-        // setEwGrabberImage(btoa(String.fromCharCode(...new Uint8Array(arrayBuffer))))
+        if (ewGrabbedScreen > 1) {
+            setEwGrabberImage(btoa(String.fromCharCode(...new Uint8Array(arrayBuffer))))
+
+        }
     }
 
     const updateGrabbedScreen = (event, screens) => {
@@ -35,17 +42,37 @@ function ImageOutputXGrabPanel() {
 
     const updateGrabbedTest = (event, text) => {
         console.log(text)
+        if (text) {
+            // const regex = /^(\w+)\s+(\w+)\s+(\d+):(\d+)\s+\((\w+)\)$/;
+            // console.log(text.match(regex))
+
+            const pattern = /^(\d+)\s+([A-Za-z\s]+)\s+(\d+):(\d+)\s+\((\w+)\)$/;
+            // const match = text.match(pattern);
+            // console.log(match);
+
+        }
     }
+
+    const _arrayBufferToBase64 = (buffer) => {
+        var binary = '';
+        var bytes = new Uint8Array(buffer);
+        var len = bytes.byteLength;
+        for (var i = 0; i < len; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        return window.btoa(binary);
+    }
+
     useEffect(() => {
         ipcRenderer.on('grabber-finished-test', updateGrabbedTest)
         ipcRenderer.on('grabber-finished', updateGrabbedText)
-        ipcRenderer.on('grabber-finished-image', updateGrabbedImage)
+        // ipcRenderer.on('grabber-finished-image', updateGrabbedImage)
         ipcRenderer.on('grabber-finished-screen', updateGrabbedScreen)
 
         return () => {
             ipcRenderer.removeListener('grabber-finished-test', updateGrabbedTest)
             ipcRenderer.removeListener('grabber-finished', updateGrabbedText);
-            ipcRenderer.removeListener('grabber-finished-image', updateGrabbedImage);
+            // ipcRenderer.removeListener('grabber-finished-image', updateGrabbedImage);
             ipcRenderer.removeListener('grabber-finished-screen', updateGrabbedScreen);
         }
     }, []);
@@ -67,7 +94,19 @@ function ImageOutputXGrabPanel() {
             setEwGrabberBibleVersion('')
         } else {
             // const splitted = ewGrabbedText.match(/\w+|\d+|(\d+-\d+)|\(\w+\)/g);
-            const splitted = ewGrabbedText.replace(/\(([^)]+)\)/, '$1').match(/\w+|\d+/g);
+            let splittedInitial = ewGrabbedText.replace(/\(([^)]+)\)/, '$1').match(/\w+|\d+/g);
+            let splitted = splittedInitial;
+            if (!splittedInitial) {
+                setEwGrabberBibleName('')
+                setEwGrabberBibleChapter('')
+                setEwGrabberBibleVerse('')
+                setEwGrabberBibleVersion('')
+                return;
+            }
+            if (!isNaN(splittedInitial[0])) {
+                splitted = [splittedInitial.slice(0, 2).join(' '), ...splittedInitial.slice(2)];
+                console.log(splitted);
+            }
             console.log(splitted)
             if (splitted.length == 6) {
             } else if (splitted.length == 5) {
@@ -137,6 +176,7 @@ function ImageOutputXGrabPanel() {
             setEwGrabberBibleChapter('')
             setEwGrabberBibleVerse('')
             setEwGrabberBibleVersion('')
+            setEwGrabberImage('')
         }
 
     }, [isEwGrabberConnected])

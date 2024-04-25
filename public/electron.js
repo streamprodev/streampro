@@ -21,6 +21,9 @@ const sharp = require('sharp');
 const { spawn } = require('child_process');
 const { exec } = require('child_process');
 
+const { Server } = require("socket.io");
+const { io } = require("socket.io-client");
+
 
 
 
@@ -35,6 +38,8 @@ const { autoUpdater, AppUpdater } = require("electron-updater");
 // var ping = require('ping');
 // const icmp = require('icmp');
 
+var VmixConnection = require('../src/helpers/vmix-connection.js');
+
 
 let db
 let win
@@ -46,7 +51,9 @@ let songKey
 let already_watching
 
 const port = 8088;                  //Save the port number where your server will be listening
+const tcpPort = 8099;                  //Save the port number where your server will be listening
 var session = '';
+var server = '';
 var reconnecting = '';
 var generatereconnecting = '';
 var intervalId = '';
@@ -62,9 +69,14 @@ var session_id;
 var update_found;
 var isEwGrabberActive = false
 var active_display = ''
+var multiCheck = [];
+var activeConections = [];
+var tcpConnections = [];
 
 autoUpdater.autoDownload = false;
 autoUpdater.autoInstallOnAppQuit = true;
+
+// const server = require('../src/helpers/express.js');
 
 createWorker('eng').then((worker) => {
     console.log("we are here");
@@ -173,6 +185,10 @@ const updateReconnectingStatus = (event, status) => {
     reconnecting = status
     event.sender.send('setReconnecting', status);
 }
+const updateReconnectingStatusTCP = (event, data) => {
+    console.log(data)
+    win.webContents.send(event, data);
+}
 const updateGenerateReconnectingStatus = (event, status) => {
 
     console.log(generatereconnecting, 'generatereconnecting')
@@ -184,7 +200,7 @@ const checkIfConnectedToVmix = async (event, filePath) => {
 
     intervalId = setInterval(async () => {
         var myHeaders = new Headers();
-        const base_64 = btoa(filePath.outputPasscode + "STP" + ":" + filePath.outputPasscode + "STP")
+        const base_64 = btoa(filePath.passcode + ":" + filePath.passcode)
         myHeaders.append("Authorization", "Basic " + base_64);
         var requestOptions = {
             method: 'GET',
@@ -234,6 +250,192 @@ const stopIntervalRun = (event) => {
 
 }
 
+const checkIfConnectedToVmixMulti = async (event, filePath) => {
+    console.log('checkIfConnectedToVmixMulti')
+    // if (intervalId) {
+    //     clearInterval(intervalId)
+    // }
+
+    let newConnection = {
+        passcode: filePath.passcode,
+        outputUrl: filePath.outputUrl,
+        tcpUrl: filePath.tcpUrl,
+        reconnecting: false,
+        uuid: filePath.uuid,
+        stopTimeoutId: null
+    }
+
+    // console.log('checkIfConnectedToVmixMulti', newConnection)
+    // multiCheck.push(newConnection);
+    // console.log('checkIfConnectedToVmixMulti', multiCheck)
+    // doIntervalCheckMulti(event)
+    // console.log(multiCheck, 'interval started')
+
+    checkSocketConnection(event, newConnection)
+
+
+}
+
+const doIntervalCheckMulti = async (event) => {
+    console.log('interval-start')
+    intervalId = setInterval(async () => {
+        multiCheck.forEach(async (connection) => {
+            console.log(connection, 'interval-each')
+            checkSocketConnection(event, connection)
+
+
+
+
+            //
+
+
+            var myHeaders = new Headers();
+            const base_64 = btoa(connection.passcode + ":" + connection.passcode)
+            myHeaders.append("Authorization", "Basic " + base_64);
+            var requestOptions = {
+                method: 'GET',
+                redirect: 'follow',
+                headers: myHeaders,
+                mode: "no-cors",
+            };
+            try {
+                const response = await fetch(connection.outputUrl + "/api", requestOptions);
+                if (!response.ok) {
+                    console.log(connection, "not connected")
+                    if (!connection.reconnecting) {
+                        updateReconnectingStatusMulti(event, true, connection)
+                        stopIntervalRunMulti(event, connection)
+                    }
+                } else {
+                    console.log(connection, "connected")
+                    if (connection.reconnecting) {
+                        clearInterval(intervalId)
+                        clearTimeout(connection.stopTimeoutId)
+                        multiCheck = multiCheck.map((c) => c.uuid !== connection.uuid ? c : { ...c, reconnecting: false, stopTimeoutId: null })
+                        doIntervalCheckMulti(event)
+                    }
+                    updateReconnectingStatusMulti(event, false, connection)
+                }
+
+            } catch (error) {
+                console.log(connection, "not connected")
+                if (!connection.reconnecting) {
+                    updateReconnectingStatusMulti(event, true, connection)
+                    stopIntervalRunMulti(event, connection)
+                }
+            }
+        })
+    }, 5000);
+}
+
+const checkSocketConnection = (event, connection) => {
+    //ws://6.tcp.eu.ngrok.io:10007
+
+    socket = io(connection.tcpUrl, { reconnectionAttempts: 12 });
+
+    socket.on("connect", () => {
+        //fires when it connect successfully at first, or connected successfully after reconnect
+        //when ever this fires, if it was blinking before, let blinking stop
+        console.log("connected successfully at".concat(new Date().toLocaleTimeString()).concat(new Date().getMilliseconds()));
+        const isAlreadyActive = activeConections.find(({ uuid }) => uuid === connection.uuid)
+        if (!isAlreadyActive) {
+            activeConections.push(connection);
+        }
+        updateReconnectingStatusMulti(event, false, connection)
+    });
+
+
+    socket.on("connect_error", (error) => {
+        console.log('connect error')
+        //fired everytime a connection was attempted and it failed either initially, or on reconnect.
+        //for everytime this happens, let the blinking continue to happen
+        if (socket.active) {
+            // temporary failure, the socket will automatically try to reconnect
+            console.log("temporary connection failure".concat(new Date().toLocaleTimeString()).concat(new Date().getMilliseconds()));
+            console.log(error.message);
+            updateReconnectingStatusMulti(event, true, connection)
+        } else {
+            // the connection was denied by the server
+            // in that case, `socket.connect()` must be manually called in order to reconnect
+            //just go ahead and close the output here, it won't try to automatically reconnect,so no need to blink here
+            console.log("permament connection failure".concat(new Date().toLocaleTimeString()).concat(new Date().getMilliseconds()));
+            console.log(error.message);
+
+            console.log(connection, 'disconnected')
+            activeConections = activeConections.filter((c) => c.uuid !== connection.uuid);
+            event.sender.send('vmixDisconectedMulti', connection);
+        }
+
+    });
+
+    socket.on("disconnect", (reason, details) => {
+        console.log("disconnect")
+        //fired just once, the moment a disconnect happens, let the blinking start
+        console.log(reason)
+        if (socket.active) {
+            // temporary failure, the socket will automatically try to reconnect
+            console.log("temporary disconnect".concat(new Date().toLocaleTimeString()).concat(new Date().getMilliseconds()));
+            console.log(details);
+
+            console.log(connection, "not connected")
+            updateReconnectingStatusMulti(event, true, connection)
+
+        } else {
+            // the connection was denied by the server
+            // in that case, `socket.connect()` must be manually called in order to reconnect
+            //just go ahead and close the output here, it won't try to automatically reconnect,so no need to blink here
+            console.log("total disconnect".concat(new Date().toLocaleTimeString()).concat(new Date().getMilliseconds()));
+            console.log(details);
+            console.log(connection, 'disconnected')
+            activeConections = activeConections.filter((c) => c.uuid !== connection.uuid);
+            event.sender.send('vmixDisconectedMulti', connection);
+        }
+
+    });
+
+
+    socket.io.on("reconnect_failed", () => {
+        // Fired when couldn't reconnect within reconnectionAttempts.
+        // It has attempted 12 times(or no of time configured) and stopped
+        // Close the output here
+        console.log("Reconnection attempt has finished")
+        console.log(connection, 'disconnected')
+
+        activeConections = activeConections.filter((c) => c.uuid !== connection.uuid);
+        event.sender.send('vmixDisconectedMulti', connection);
+
+    });
+}
+
+const stopIntervalRunMulti = (event, connection) => {
+    let stopTimeoutId = setTimeout(() => {
+        console.log(connection, 'disconnected')
+        clearInterval(intervalId)
+        multiCheck = multiCheck.filter((c) => c.uuid !== connection.uuid);
+        event.sender.send('vmixDisconectedMulti', connection);
+        if (multiCheck.length) {
+            doIntervalCheckMulti(event)
+        }
+
+    }, 60000);
+
+    clearInterval(intervalId)
+    multiCheck = multiCheck.map((c) => c.uuid !== connection.uuid ? c : { ...c, reconnecting: true, stopTimeoutId })
+    if (multiCheck.length) {
+        doIntervalCheckMulti(event)
+    }
+}
+
+const updateReconnectingStatusMulti = (event, status, connection) => {
+
+    // console.log(event)
+    // reconnecting = status
+    event.sender.send('setReconnectingMulti', { status, connection });
+}
+
+
+
+
 ipcMain.on('stopOutputConnectionCheck', (event, record) => {
     // console.log(intervalId)
     clearInterval(intervalId)
@@ -243,7 +445,7 @@ const checkIfGeneratedLinkActiv = async (event, filePath) => {
     console.log(filePath)
     intervalIdGenerate = setInterval(async () => {
         var myHeaders = new Headers();
-        const base_64 = btoa(filePath.outputPasscode + "STP" + ":" + filePath.outputPasscode + "STP")
+        const base_64 = btoa(filePath.passcode + ":" + filePath.passcode)
         myHeaders.append("Authorization", "Basic " + base_64);
         var requestOptions = {
             method: 'GET',
@@ -253,19 +455,25 @@ const checkIfGeneratedLinkActiv = async (event, filePath) => {
         };
         try {
             const response = await fetch(filePath.outputUrl, requestOptions);
+            // event.sender.send('checkIfGeneratedLinkActiv', response);
+            // event.sender.send('checkIfGeneratedLinkActiv', response.json());
             if (!response.ok) {
+                // event.sender.send('checkIfGeneratedLinkActiv', "not connected");
                 console.log("not connected")
                 if (!generatereconnecting) {
                     console.log(event)
+                    // event.sender.send('checkIfGeneratedLinkActiv', "stop connection afer 60 seconds");
                     updateGenerateReconnectingStatus(event, true)
                     stopGeneratedLinkIntervalRun(event)
                 }
             } else {
+                // event.sender.send('checkIfGeneratedLinkActiv', "connected");
                 console.log("connected")
                 updateGenerateReconnectingStatus(event, false)
             }
 
         } catch (error) {
+            // event.sender.send('checkIfGeneratedLinkActiv', "not connected -catch");
             console.log("not connected")
             if (!generatereconnecting) {
                 updateGenerateReconnectingStatus(event, true)
@@ -273,6 +481,35 @@ const checkIfGeneratedLinkActiv = async (event, filePath) => {
             }
         }
     }, 5000);
+    console.log(intervalIdGenerate)
+
+}
+const testSPControlConnection = async (filePath) => {
+    console.log(filePath)
+    var myHeaders = new Headers();
+    const base_64 = btoa(filePath.outputPasscode + "STP" + ":" + filePath.outputPasscode + "STP")
+    myHeaders.append("Authorization", "Basic " + base_64);
+    var requestOptions = {
+        method: 'GET',
+        redirect: 'follow',
+        headers: myHeaders,
+        mode: "no-cors",
+    };
+    try {
+        const response = await fetch(filePath.outputUrl, requestOptions);
+        console.log(response.ok)
+        if (!response.ok) {
+            console.log('false')
+            return false;
+        } else {
+            console.log('true')
+            return true;
+        }
+
+    } catch (error) {
+        console.log('false')
+        return false;
+    }
 
 }
 
@@ -294,29 +531,82 @@ ipcMain.on('stopGeneratedLinkConnectionCheck', (event, record) => {
     clearInterval(intervalIdGenerate)
 
 });
+ipcMain.on('sendtoalloutputs', (event, connections) => {
+    connections.forEach((connection) => {
+        console.log(connection)
+        console.log(connection.key._attributes.key)
+        tcpConnections[connection.uuid].setTextFunction(connection.key._attributes.key, "new title", "new message");
+    })
+
+});
 
 ipcMain.handle('connectVmix', async (event, filePath) => {
-    var myHeaders = new Headers();
-    const base_64 = btoa(filePath.outputPasscode + "STP" + ":" + filePath.outputPasscode + "STP")
-    myHeaders.append("Authorization", "Basic " + base_64);
-    var requestOptions = {
-        method: 'GET',
-        redirect: 'follow',
-        headers: myHeaders,
-        mode: "no-cors",
-    };
-    const response = await fetch(filePath.outputUrl + "/api", requestOptions);
+    // var myHeaders = new Headers();
+    // const base_64 = btoa(filePath.passcode + ":" + filePath.passcode)
+    // myHeaders.append("Authorization", "Basic " + base_64);
+    // var requestOptions = {
+    //     method: 'GET',
+    //     redirect: 'follow',
+    //     headers: myHeaders,
+    //     mode: "no-cors",
+    // };
 
-    if (!response.ok) {
-        const message = `An error has occured: ${response.status}`;
+    console.log('check local')
+    console.log(win)
+    var connection = [];
+    if (filePath.local) {
+        var connection = new VmixConnection("ws://127.0.0.1:8099", onConnectCallBack, onCloseCallBack, onRetryCompletedCallBack, updateReconnectingStatusTCP, filePath, event);
+        // console.log(connection)
+        return new Promise((resolve, reject) => setTimeout(() => {
+            if (connection.isNowConnected) {
+                tcpConnections[filePath.uuid] = connection
+                console.log(connection.isNowConnected)
+                resolve(connection.isNowConnected);
+                return connection.isNowConnected
+            }
+            reject(new Error('not connected'))
+            return connection.isNowConnected;
+            throw new Error('not connected');
 
-        if (!reconnecting) {
-            //updateReconnectingStatus(event, true)
-        }
-        throw new Error(message);
+        }, 2000));
+
+
+    } else {
+        var connection = new VmixConnection(filePath.tcpUrl, onConnectCallBack, onCloseCallBack, onRetryCompletedCallBack, updateReconnectingStatusTCP, filePath, event);
+        return new Promise((resolve, reject) => setTimeout(() => {
+            if (connection.isNowConnected) {
+                tcpConnections[filePath.uuid] = connection
+                console.log(connection.isNowConnected)
+                resolve(connection.isNowConnected);
+                return connection.isNowConnected;
+            }
+            reject(new Error('not connected'))
+            return connection.isNowConnected;
+            // throw new Error('not connected');
+
+        }, 2000));
+
     }
-    checkIfConnectedToVmix(event, filePath)
-    const data = await response.text();
+
+
+
+
+    // const response = await fetch(filePath.outputUrl + "/api", requestOptions);
+
+    // if (!response.ok) {
+    //     const message = `An error has occured: ${response.status}`;
+
+    //     if (!reconnecting) {
+    //         //updateReconnectingStatus(event, true)
+    //     }
+    //     throw new Error(message);
+    // }
+    // console.log('connect vmix')
+    // // checkIfConnectedToVmix(event, filePath)
+    // if (!filePath.local) {
+    //     // checkIfConnectedToVmixMulti(event, filePath)
+    // }
+    // const data = await response.text();
     // console.log(data)
     // parseString(data, function (err, results) {
     //     const bibleKeyObj = results.vmix.inputs[0].input.find(({ _ }) => _ === "Bible")
@@ -325,7 +615,9 @@ ipcMain.handle('connectVmix', async (event, filePath) => {
     //     songKey = songKeyObj.$.key
     // });
 
-    return data;
+
+
+    // return data;
 
 });
 
@@ -374,7 +666,7 @@ ipcMain.handle('goLiveWSongs', async (event, filePath) => {
 });
 ipcMain.handle('goLiveWBible', async (event, filePath) => {
 
-    console.log(filePath)
+    // console.log(filePath)
     try {
 
         var myHeaders = new Headers();
@@ -596,64 +888,66 @@ ipcMain.handle('sendToVmixBible', async (event, filePath) => {
 
 ipcMain.handle('goLiveWMulti', async (event, filePath) => {
 
-    console.log(filePath)
+    // console.log(filePath)
     try {
 
-        var myHeaders = new Headers();
-        const base_64 = btoa(filePath.outputPasscode + "STP" + ":" + filePath.outputPasscode + "STP")
-        myHeaders.append("Authorization", "Basic " + base_64);
-        var requestOptions = {
-            method: 'GET',
-            redirect: 'follow',
-            headers: myHeaders,
-            mode: "no-cors",
-        };
+        // var myHeaders = new Headers();
+        // const base_64 = btoa(filePath.passcode + ":" + filePath.passcode)
+        // myHeaders.append("Authorization", "Basic " + base_64);
+        // var requestOptions = {
+        //     method: 'GET',
+        //     redirect: 'follow',
+        //     headers: myHeaders,
+        //     mode: "no-cors",
+        // };
 
 
 
         // console.log(filePath.selectedVerseArray)
-        myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
+        // myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
 
-        var details = {
-            'txtMessage': filePath?.selectedVerseArray?.text ? filePath?.selectedVerseArray?.text : "",
-            'txtTitle': filePath?.selectedVerseArray?.text ? filePath?.selectedVerseArray?.ref : "",
-            'Update': 'Update'
-        };
+        // var details = {
+        //     'txtMessage': filePath?.selectedVerseArray?.text ? filePath?.selectedVerseArray?.text : "",
+        //     'txtTitle': filePath?.selectedVerseArray?.text ? filePath?.selectedVerseArray?.ref : "",
+        //     'Update': 'Update'
+        // };
         if (filePath.path == '/main/song') {
-            console.log('songs')
-            var details = {
-                'txtMessage': filePath.finaloutputLine ? filePath.finaloutputLine : "",
-                'txtTitle': "",
-                'Update': 'Update'
-            };
+            tcpConnections[filePath.uuid].setTextFunction(filePath.key, "", filePath.finaloutputLine ? filePath.finaloutputLine : "");
+            // console.log('songs')
+            // var details = {
+            //     'txtMessage': filePath.finaloutputLine ? filePath.finaloutputLine : "",
+            //     'txtTitle': "",
+            //     'Update': 'Update'
+            // };
             // filePath.outputLine
         } else {
-            console.log('bible')
+            tcpConnections[filePath.uuid].setTextFunction(filePath.key, filePath?.selectedVerseArray?.text ? filePath?.selectedVerseArray?.ref : "", filePath?.selectedVerseArray?.text ? filePath?.selectedVerseArray?.text : "");
+            // console.log('bible')
         }
-        var formBody = [];
-        for (var property in details) {
-            var encodedKey = encodeURIComponent(property);
-            var encodedValue = encodeURIComponent(details[property]);
-            formBody.push(encodedKey + "=" + encodedValue);
-        }
-        formBody = formBody.join("&");
-        var postrequestOptions = {
-            method: 'POST',
-            redirect: 'follow',
-            headers: myHeaders,
-            mode: "no-cors",
-            body: formBody
-        };
+        // var formBody = [];
+        // for (var property in details) {
+        //     var encodedKey = encodeURIComponent(property);
+        //     var encodedValue = encodeURIComponent(details[property]);
+        //     formBody.push(encodedKey + "=" + encodedValue);
+        // }
+        // formBody = formBody.join("&");
+        // var postrequestOptions = {
+        //     method: 'POST',
+        //     redirect: 'follow',
+        //     headers: myHeaders,
+        //     mode: "no-cors",
+        //     body: formBody
+        // };
 
 
-        const setTextandTitleResponse = await fetch(filePath.outputUrl + "/titles/?key=" + filePath.key, postrequestOptions)
-        console.log(setTextandTitleResponse)
-        if (!setTextandTitleResponse.ok) {
-            if (!reconnecting) {
-                //updateReconnectingStatus(event, true)
-            }
-        }
-        const data = await setTextandTitleResponse.text();
+        // const setTextandTitleResponse = await fetch(filePath.outputUrl + "/titles/?key=" + filePath.key, postrequestOptions)
+        // // console.log(setTextandTitleResponse)
+        // if (!setTextandTitleResponse.ok) {
+        //     if (!reconnecting) {
+        //         //updateReconnectingStatus(event, true)
+        //     }
+        // }
+        // const data = await setTextandTitleResponse.text();
     } catch (error) {
         if (!reconnecting) {
             //updateReconnectingStatus(event, true)
@@ -723,7 +1017,32 @@ ipcMain.handle('createVmixOverlay', async (event, filePath) => {
     return 1;
 });
 ipcMain.handle('close-app', async (event, filePath) => {
-    win?.close()
+    if (isEwGrabberActive) {
+
+        isEwGrabberActive = false;
+        var pat = path.join(app.getPath('documents'), 'StreamPro/virtual_monitor_installer/remove_screen.bat')
+        console.log("Current directory- closed app:", pat);
+
+        exec(`"${pat}"`, (error, stdout, stderr) => {
+            console.log('app-closing')
+
+            if (error) {
+                console.error(`error: ${error.message}`);
+                return;
+            }
+            if (stderr) {
+                console.error(`stderr: ${stderr}`);
+                return;
+            }
+            console.log(`stdout:\n${stdout}`);
+        })
+        setTimeout(() => {
+            win?.close()
+        }, 2000)
+    } else {
+        win?.close()
+
+    }
 });
 ipcMain.handle('maximize-app', async (event, filePath) => {
     if (win?.isMaximized()) {
@@ -891,6 +1210,7 @@ ipcMain.on('singleDelete', (event, record) => {
 
 ipcMain.on('closengrok', async (event) => {
     closeNgrokSession(event, 'Session closed successfuly')
+    clearInterval(intervalIdGenerate)
 })
 
 
@@ -1223,118 +1543,210 @@ const closeNgrokSession = (event, message) => {
         session = '';
         event.reply('closeNgrokSession', message);
     }
+    if (server) {
+        server.close()
+        server = ''
+    }
 }
 
 ipcMain.on('createConnection', async (event, registration_info, enableExternalConnection = false) => {
 
     password = generateRandom()
+    const created_at = (new Date()).toISOString();
+    const key = created_at.replace(/[ T:.-]/g, "").slice(0, -5)
+    const passcode = key + password
     url = 'http://127.0.0.1:8088'
 
-    db.run('INSERT INTO local_connections (url, passcode,created,updated,uuid) VALUES (?, ?,?, ?,?)', [
-        url,
-        password,
-        new Date().toJSON(),
-        new Date().toJSON(),
-        uuidv4()
-    ], (err) => {
-        console.log(err)
-    });
+    let response = await testSPControlConnection({ outputUrl: url, outputPasscode: 123455 })
+    // console.log(response, '1397')
+    // console.log(!response, '1397')
+    // console.log(typeof response, '1397')
 
-    if (enableExternalConnection) {
-        bearer_token = registration_info.ngrok_bearertoken;
-        auth_token = registration_info.ngrok_key;
-        try {
-            const online_sessions = await fetch('https://api.ngrok.com/tunnel_sessions', {
-                method: 'GET',
-                headers: {
-                    "Authorization": 'Bearer ' + bearer_token,
-                    "Ngrok-Version": "2",
-                    "Content-Type": "application/json",
-                }
-            })
-            const online_session = await online_sessions.json();
+    if (response) {
 
-            if (online_session.tunnel_sessions && online_session.tunnel_sessions.length > 0) {
-                session_id = online_session.tunnel_sessions[0].id
+        db.run('INSERT INTO local_connections (url, passcode,created,updated,uuid) VALUES (?, ?,?, ?,?)', [
+            url,
+            password,
+            new Date().toJSON(),
+            new Date().toJSON(),
+            uuidv4()
+        ], (err) => {
+            console.log(err)
+        });
 
-                if (session) {
+        if (enableExternalConnection) {
+            bearer_token = registration_info.ngrok_bearertoken;
+            auth_token = registration_info.ngrok_key;
 
-                    console.log('Session exists locally, so going ahead to establish a tunnel');
-                    const tunnel = await session.httpEndpoint().basicAuth(password + "STP", password + "STP").listen();
-                    const url = tunnel.url()
-                    tunnel.forwardTcp('127.0.0.1:' + port)
-                    console.log("tunnel established at:", url);
-                    event.reply('setngrokUrl', { url, password, registration_info });
-                    checkIfGeneratedLinkActiv(event, { outputUrl: url, outputPasscode: password })
-                } else {
-                    console.log('Session does not exist locally, so asking for already existing session to close');
+            // let data = {
+            //     url: contents.url,
+            //     password: contents.password,
+            //     created_at: created_at,
+            //     key: created_at.replace(/[ T:.-]/g, "").slice(0, -5)
+            // }
 
-                    await fetch('https://api.ngrok.com/tunnel_sessions/' + session_id + '/stop', {
-                        method: 'POST',
-                        headers: {
-                            "Authorization": 'Bearer ' + registration_info.ngrok_bearertoken,
-                            "Ngrok-Version": "2",
-                            "Content-Type": "application/json",
-                        },
-                        body: '{}'
-                    })
-                    // await closesessions.json();
 
-                    console.log('Existing session closed');
-                    // password = generateRandom()
-                    setTimeout(async () => {
-                        session = await new ngrok.NgrokSessionBuilder().authtoken(auth_token).handleStopCommand(() => {
-                            closeNgrokSession(event, 'Received request to stop session')
-                            console.log('received request to stop session')
-                            console.log('session closed')
-                        })
-                            .connect();
-                        const tunnel = await session.httpEndpoint().basicAuth(password + "STP", password + "STP").listen();
+            try {
+                const online_sessions = await fetch('https://api.ngrok.com/tunnel_sessions', {
+                    method: 'GET',
+                    headers: {
+                        "Authorization": 'Bearer ' + bearer_token,
+                        "Ngrok-Version": "2",
+                        "Content-Type": "application/json",
+                    }
+                })
+                const online_session = await online_sessions.json();
+                // const io = new Server(tcpPort, { pingInterval: 2000, pingTimeout: 5000 });
+                // server = io;
+                // io.on("connection", (socket) => {
+                //     // ...
+                //     // console.log(socket.cl)
+                //     console.log("connection to created socket at: ".concat(new Date().toLocaleTimeString()));
+                // });
+                if (online_session.tunnel_sessions && online_session.tunnel_sessions.length > 0) {
+                    session_id = online_session.tunnel_sessions[0].id
+
+                    if (session) {
+
+                        console.log('Session exists locally, so going ahead to establish a tunnel');
+                        const tunnel = await session.httpEndpoint().basicAuth(passcode, passcode).listen();
                         const url = tunnel.url()
                         tunnel.forwardTcp('127.0.0.1:' + port)
                         console.log("tunnel established at:", url);
-                        event.reply('setngrokUrl', { url, password, registration_info });
-                        checkIfGeneratedLinkActiv(event, { outputUrl: url, outputPasscode: password })
 
-                    }, 20000);
+                        const tunnelTCP = await session.tcpEndpoint().listen();
+                        const tcpUrl = tunnelTCP.url().replace('tcp', 'ws');
+                        console.log("Tunnel established at:", tcpUrl);
+                        //save tcp tunnel url also as part of remote connection document saved on firebase
+                        tunnelTCP.forwardTcp('127.0.0.1:' + tcpPort);
 
+
+                        event.reply('setngrokUrl', { url, tcpUrl, password, registration_info, created_at, passcode, key });
+                        // checkIfGeneratedLinkActiv(event, { outputUrl: url, outputPasscode: password, created_at, passcode, key })
+                    } else {
+                        console.log('Session does not exist locally, so asking for already existing session to close');
+
+                        await fetch('https://api.ngrok.com/tunnel_sessions/' + session_id + '/stop', {
+                            method: 'POST',
+                            headers: {
+                                "Authorization": 'Bearer ' + registration_info.ngrok_bearertoken,
+                                "Ngrok-Version": "2",
+                                "Content-Type": "application/json",
+                            },
+                            body: '{}'
+                        })
+                        // await closesessions.json();
+
+                        console.log('Existing session closed');
+                        // password = generateRandom()
+                        setTimeout(async () => {
+                            session = await new ngrok.NgrokSessionBuilder().authtoken(auth_token)
+                                .handleStopCommand(() => {
+                                    closeNgrokSession(event, 'Received request to stop session')
+                                    console.log('received request to stop session')
+                                    console.log('session closed')
+                                    event.reply('checkIfGeneratedLinkActiv', 'Received request to stop session');
+                                })
+                                .handleDisconnection((addr, error) => {
+                                    console.log("disconnected, addr:", addr, "error:", error);
+                                    if (error == 'transport error') {
+                                        console.log('received event of a disconnect that happened(there may have been a reconnection back though')
+                                        return true;
+                                    }
+                                    else {
+                                        console.log('received request of a reconnect error')
+                                        closeNgrokSession(event, 'Received request to stop session')
+                                        event.reply('checkIfGeneratedLinkActiv', 'SP Control disconnected');
+                                        console.log('session disconnected')
+                                        return false;
+                                    }
+                                })
+                                .connect();
+
+
+                            const tunnel = await session.httpEndpoint().basicAuth(passcode, passcode).listen();
+                            const url = tunnel.url()
+                            tunnel.forwardTcp('127.0.0.1:' + port)
+                            console.log("tunnel established at:", url);
+
+                            const tunnelTCP = await session.tcpEndpoint().listen();
+                            const tcpUrl = tunnelTCP.url().replace('tcp', 'ws')
+                            console.log("Tunnel established at:", tcpUrl);
+                            //save tcp tunnel url also as part of remote connection document saved on firebase
+                            tunnelTCP.forwardTcp('127.0.0.1:' + tcpPort);
+
+
+                            event.reply('setngrokUrl', { url, tcpUrl, password, registration_info, created_at, passcode, key });
+                            // checkIfGeneratedLinkActiv(event, { outputUrl: url, outputPasscode: password, created_at, passcode, key })
+
+                        }, 20000);
+
+
+                    }
+                } else {
+                    console.log('no active agent/session on the account, would create one')
+                    //create session and tunnel
+                    // password = generateRandom()
+                    session = await new ngrok.NgrokSessionBuilder().authtoken(auth_token)
+                        .handleStopCommand(() => {
+                            closeNgrokSession(event, 'Received request to stop session')
+                            // event.reply('setngrokUrlError', 'session setup error: received request to stop session');
+                            console.log('received request to stop session')
+                            // session.close();
+                            console.log('session closed')
+                        })
+                        .handleDisconnection((addr, error) => {
+                            console.log("disconnected, addr:", addr, "error:", error);
+                            if (error == 'transport error') {
+                                console.log('received event of a disconnect that happened(there may have been a reconnection back though')
+                                return true;
+                            }
+                            else {
+                                console.log('received request of a reconnect error')
+                                closeNgrokSession(event, 'SP Control disconnected')
+                                console.log('session disconnected')
+                                return false;
+                            }
+                        })
+                        .connect();
+                    const tunnel = await session.httpEndpoint().basicAuth(passcode, passcode).listen();
+                    const url = tunnel.url()
+                    tunnel.forwardTcp('127.0.0.1:' + port)
+                    console.log("tunnel established at:", url);
+
+                    const tunnelTCP = await session.tcpEndpoint().listen();
+                    const tcpUrl = tunnelTCP.url().replace('tcp', 'ws')
+                    console.log("Tunnel established at:", tcpUrl);
+                    //save tcp tunnel url also as part of remote connection document saved on firebase
+                    tunnelTCP.forwardTcp('127.0.0.1:' + tcpPort);
+
+                    event.reply('setngrokUrl', { url, tcpUrl, password, registration_info, created_at, passcode, key });
+                    // checkIfGeneratedLinkActiv(event, { outputUrl: url, outputPasscode: password, created_at, passcode, key })
 
                 }
-            } else {
-                console.log('no active agent/session on the account, would create one')
-                //create session and tunnel
-                // password = generateRandom()
-                session = await new ngrok.NgrokSessionBuilder().authtoken(auth_token).handleStopCommand(() => {
-                    closeNgrokSession(event, 'Received request to stop session')
-                    // event.reply('setngrokUrlError', 'session setup error: received request to stop session');
-                    console.log('received request to stop session')
-                    // session.close();
-                    console.log('session closed')
-                })
-                    .connect();
-                const tunnel = await session.httpEndpoint().basicAuth(password + "STP", password + "STP").listen();
-                const url = tunnel.url()
-                tunnel.forwardTcp('127.0.0.1:' + port)
-                console.log("tunnel established at:", url);
-                event.reply('setngrokUrl', { url, password, registration_info });
-                checkIfGeneratedLinkActiv(event, { outputUrl: url, outputPasscode: password })
 
+            } catch (error) {
+                console.log(error)
+                event.reply('setngrokUrlError', 'Error Generating Code.');
             }
 
-        } catch (error) {
-            console.log(error)
-            event.reply('setngrokUrlError', 'Error Generating Code.');
+        } else {
+            event.reply('setngrokUrl', { url, password, registration_info, created_at, passcode, key });
         }
-
     } else {
-        event.reply('setngrokUrl', { url, password, registration_info });
+        console.log('vmix not connected')
+        event.reply('setngrokUrlError', 'Kindly check if vmix is connected.');
+        return '';
+
     }
+    // console.log('vmix not connected')
+
 
 });
 ipcMain.on('getavalaibleVmixInputsInitiate', async (event, data,) => {
 
     var myHeaders = new Headers();
-    const base_64 = btoa(data.outputPasscode + "STP" + ":" + data.outputPasscode + "STP")
+    const base_64 = btoa(data.passcode + ":" + data.passcode)
     myHeaders.append("Authorization", "Basic " + base_64);
     var requestOptions = {
         method: 'GET',
@@ -1453,11 +1865,11 @@ ipcMain.on('minimize', () => {
 
 ipcMain.on('close', () => {
     isEwGrabberActive = false;
-    var pat = __dirname + "/virtual_monitor_installer/remove_screen.bat";
-    var pat = path.join(app.getPath('documents'), 'StreamPro/virtual_monitor_installer/remove_screen.bat')
-    console.log("Current directory:", pat);
 
-    exec(pat, (error, stdout, stderr) => {
+    var pat = path.join(app.getPath('documents'), 'StreamPro/virtual_monitor_installer/remove_screen.bat')
+    console.log("Current directory-close:", pat);
+
+    exec(`"${pat}"`, (error, stdout, stderr) => {
 
         if (error) {
             console.error(`error: ${error.message}`);
@@ -1508,6 +1920,62 @@ ipcMain.on('saveRegistrationInfo', async (event, registration_info) => {
         }
     });
 });
+ipcMain.on('updateRegistrationInfo', async (event, registration_info) => {
+
+    if (!firestore) {
+        const firebaseConfig = {
+            apiKey: registration_info.firestore_apikey,
+            projectId: registration_info.firestore_projectid,
+            appId: registration_info.firestore_appid,
+        };
+        firestore = getFirestore(initializeApp(firebaseConfig))
+
+    }
+
+    // Initialize Firebase
+    const coll = collection(firestore, 'License Keys');
+    console.log(registration_info.license_key)
+    const q = query(coll, where("license_key", "==", registration_info.license_key))
+    const doc_refs = await getDocs(q);
+    // console.log(doc_refs)
+    const res = []
+
+    doc_refs.forEach(country => {
+        res.push({
+            documentid: country.id,
+            ...country.data()
+        })
+    })
+
+
+    if (res.length > 0) {
+        const initial = res[0];
+        console.log(initial)
+        console.log('about to update')
+        db.run('UPDATE registration_info set license_owner = ?,ngrok_key = ?,ngrok_bearertoken = ?,firestore_apikey = ?,firestore_projectid = ?,firestore_appid = ?,documentid = ?,license_owner_email = ? WHERE license_key = ?', [
+            initial.license_owner,
+            initial.ngrok_key,
+            initial.ngrok_bearertoken,
+            initial.firestore_apikey,
+            initial.firestore_projectid,
+            initial.firestore_appid,
+            initial.documentid,
+            initial.license_owner_email,
+            initial.license_key,
+        ], (err, row) => {
+            if (err) {
+                console.log(err)
+                return err
+            }
+            event.reply('resetRegistrationInfo', initial);
+            console.log(' updated', row)
+        });
+    }
+    // console.log(collection_name)
+
+
+
+});
 
 ipcMain.on("activateEwGrabber", async function (event, arg) {
 
@@ -1522,43 +1990,26 @@ ipcMain.on("activateEwGrabber", async function (event, arg) {
     event.sender.send("grabber-finished-test", pat);
 
 
-    exec('node --version', (error, stdout, stderr) => {
-        event.sender.send("grabber-finished-test", 'entered exec node');
-        if (error) {
-            event.sender.send("grabber-finished-test", error);
-            console.error(`errornode: ${error.message}`);
-            return;
-        }
-        if (stderr) {
-            event.sender.send("grabber-finished-test", stderr);
-            console.error(`stderrnode: ${stderr}`);
-            return;
-        }
-        event.sender.send("grabber-finished-test", stdout);
-        event.sender.send("grabber-finished-test", `stdoutnode:\n${stdout}`);
-        console.log(`stdout:\n${stdout}`);
-    })
 
     try {
         exec(`"${pat}"`, (error, stdout, stderr) => {
             event.sender.send("grabber-finished-test", 'entered exec');
             if (error) {
-                event.sender.send("grabber-finished-test", error);
+                event.sender.send("grabber-finished-test", `error: ${error.message}`);
                 console.error(`error: ${error.message}`);
                 return;
             }
             if (stderr) {
-                event.sender.send("grabber-finished-test", stderr);
+                event.sender.send("grabber-finished-test", `stderr: ${stderr}`);
                 console.error(`stderr: ${stderr}`);
                 return;
             }
-            event.sender.send("grabber-finished-test", stdout);
             event.sender.send("grabber-finished-test", `stdout:\n${stdout}`);
             console.log(`stdout:\n${stdout}`);
         })
 
     } catch (error) {
-        event.sender.send("grabber-finished-test", error);
+        event.sender.send("grabber-finished-test", `catch: ${error}`);
     }
     event.sender.send("grabber-finished-test", 'exec done');
 
@@ -1598,7 +2049,6 @@ async function getScreenCount() {
 ipcMain.on("deactivateEwGrabber", function (event, arg) {
     isEwGrabberActive = false;
     // var pat = __dirname + "/virtual_monitor_installer/remove_screen.bat";
-    var pat = path.join(app.getPath('documents'), 'StreamPro/virtual_monitor_installer/remove_screen.bat')
     var pat = path.join(app.getPath('documents'), 'StreamPro/virtual_monitor_installer/remove_screen.bat')
     console.log("Current directoryclose :", pat);
     event.sender.send("grabber-finished-test", pat);
@@ -1728,14 +2178,14 @@ autoUpdater.on("error", (info) => {
 });
 
 
-app.on('window-all-closed', () => {
+app.on('window-all-closed', (event) => {
 
+    console.log(event)
     isEwGrabberActive = false;
-    var pat = __dirname + "/virtual_monitor_installer/remove_screen.bat";
     var pat = path.join(app.getPath('documents'), 'StreamPro/virtual_monitor_installer/remove_screen.bat')
-    console.log("Current directory:", pat);
+    console.log("Current directory- all closed:", pat);
 
-    exec(pat, (error, stdout, stderr) => {
+    exec(`"${pat}"`, (error, stdout, stderr) => {
 
         if (error) {
             console.error(`error: ${error.message}`);
@@ -1747,9 +2197,12 @@ app.on('window-all-closed', () => {
         }
         console.log(`stdout:\n${stdout}`);
     })
-    if (process.platform !== 'darwin') {
-        app.quit()
-    }
+    setTimeout(() => {
+        if (process.platform !== 'darwin') {
+            app.quit()
+        }
+
+    }, 10000);
 });
 
 app.on('activate', () => {
@@ -1989,13 +2442,15 @@ function getEasyWorshipOutput(event, active_display) {
         event.sender.send("grabber-finished-test", err);
     });
 
+
     screenshot({ screen: active_display }).then((img) => {
         (async () => {
 
 
 
             // console.log(img);
-            event.sender.send("grabber-finished-image", img);
+            event.sender.send("grabber-finished-image", _arrayBufferToBase64(img));
+            // event.sender.send("grabber-finished-image", img);
             const compressedImage = await sharp(img).webp({ quality: 1 }).resize({ width: 300 }).toBuffer();
             const worker = global.shared.worker;
             const { data: { text } } = await worker.recognize(compressedImage);
@@ -2007,5 +2462,27 @@ function getEasyWorshipOutput(event, active_display) {
             getEasyWorshipOutput(event, active_display);
         })();
     });
+
+    const _arrayBufferToBase64 = (buffer) => {
+        var binary = '';
+        var bytes = new Uint8Array(buffer);
+        var len = bytes.byteLength;
+        for (var i = 0; i < len; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        return btoa(binary);
+    }
+}
+
+function onConnectCallBack() {
+    console.log("connect call back called")
+}
+
+function onCloseCallBack() {
+    console.log("close call back called")
+}
+
+function onRetryCompletedCallBack() {
+    console.log("retry completed call back called")
 }
 

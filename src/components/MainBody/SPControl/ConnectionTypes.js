@@ -24,7 +24,7 @@ const { ipcRenderer } = window.require('electron');
 function ConnectionTypes() {
 
     const { registrationInfo, firestore } = useRegistrationInfo();
-    const { setexternalConnectionConnectionEstablished, setexternalConnectionUrl, setexternalConnectionPasscode, externalConnectionPasscode, isVmixStarted, setIsVmixStarted, isObsStarted, setIsObsStarted, isLightstreamStarted, setIsLightstreamStarted, isXsplitStarted, setIsXsplitStarted, isVmixExternalConnectionEnabled, setIsVmixExternalConnectionEnabled, isObsExternalConnectionEnabled, setIsObsExternalConnectionEnabled, isLightstreamExternalConnectionEnabled, setIsLightstreamExternalConnectionEnabled, isXsplitExternalConnectionEnabled, setIsXsplitExternalConnectionEnabled, copiedToaster, bibleConnections, setbibleConnections, setoutputConnectionEstablished, setisLive, setreconnectingStatus, createConnectionLoading, setIsCreateConnectionLoading } = usePreviewXOutput();
+    const { setexternalConnectionConnectionEstablished, setexternalConnectionUrl, setexternalConnectionPasscode, externalConnectionPasscode, isVmixStarted, setIsVmixStarted, isObsStarted, setIsObsStarted, isLightstreamStarted, setIsLightstreamStarted, isXsplitStarted, setIsXsplitStarted, isVmixExternalConnectionEnabled, setIsVmixExternalConnectionEnabled, isObsExternalConnectionEnabled, setIsObsExternalConnectionEnabled, isLightstreamExternalConnectionEnabled, setIsLightstreamExternalConnectionEnabled, isXsplitExternalConnectionEnabled, setIsXsplitExternalConnectionEnabled, copiedToaster, bibleConnections, setbibleConnections, setoutputConnectionEstablished, setisLive, setreconnectingStatus, createConnectionLoading, setIsCreateConnectionLoading, carouselRef } = usePreviewXOutput();
 
 
     // const establishConnection = async (local = null) => {
@@ -115,7 +115,7 @@ function ConnectionTypes() {
                         <div style={{ position: 'relative' }}>
                             <img src={vmix} alt="logo" height={90} width={"100%"} />
                             <div style={{ position: 'absolute', top: 0, right: 0 }}>
-                                <FiEdit size={10} />
+                                <FiEdit size={10} color={(isVmixStarted && isVmixExternalConnectionEnabled) ? "#3EDB57" : "#FFFFFF"} />
                             </div>
                         </div>
                         <span style={{ fontWeight: "600", color: "#FFFFFF", fontSize: "14px", }}>Vmix</span>
@@ -128,7 +128,7 @@ function ConnectionTypes() {
                                         <span style={{ fontWeight: "600", color: "#FFFFFF", fontSize: "14px", }}>{externalConnectionPasscode}</span>
                                     </div>
                                     <div style={{ position: "absolute", top: 0, right: -20 }}>
-                                        <Copy size="14" color="#FFFFFF" onClick={() => {
+                                        <Copy size="14" color={"#FFFFFF"} onClick={() => {
                                             navigator.clipboard.writeText(externalConnectionPasscode);
                                             copiedToaster()
                                         }} style={{ cursor: "pointer" }} />
@@ -141,7 +141,7 @@ function ConnectionTypes() {
                                         //     <MinusSquare size="14" color="#B1B1B1" onClick={() => setIsVmixExternalConnectionEnabled(false)} /> :
                                         //     <BiSquareRounded size="14" color="#B1B1B1" onClick={() => setIsVmixExternalConnectionEnabled(true)} />
                                     }
-                                    <input type='checkbox' value={isVmixExternalConnectionEnabled} />
+                                    <input type='checkbox' value={isVmixExternalConnectionEnabled} checked={isVmixExternalConnectionEnabled} />
                                     <span style={{ fontWeight: "600", color: "#FFFFFF", fontSize: "14px", }}>Permit external control</span>
                                 </div>
                         }
@@ -157,6 +157,9 @@ function ConnectionTypes() {
 
                                     const filteredConnections = bibleConnections.filter(x => x.outputPasscode != externalConnectionPasscode)
                                     setbibleConnections(filteredConnections)
+                                    if (carouselRef.current) {
+                                        carouselRef.current.goToSlide(0)
+                                    }
                                     if (filteredConnections < 0) {
                                         setoutputConnectionEstablished(0)
                                         setisLive(false)
@@ -177,6 +180,7 @@ function ConnectionTypes() {
 
                                     }
                                 } else {
+                                    // console.log((new Date()).toISOString().replace(/[ :.-]/g, "").slice(0, -5);)
                                     setIsCreateConnectionLoading(true)
                                     ipcRenderer.send('createConnection', registrationInfo, isVmixExternalConnectionEnabled)
                                 }

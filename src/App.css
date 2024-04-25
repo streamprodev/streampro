@@ -345,6 +345,20 @@
 .carousel-slider{
   flex:1 !important
 }
+
+.react-multi-carousel-list{
+  /* flex:1 !important; */
+  height:100% !important
+}
+.react-multi-carousel-track{
+  /* flex:1 !important; */
+  height:100% !important
+}
+.react-multi-carousel-dot-list{
+  /* flex:1 !important; */
+  display:block !important
+}
+
 .preview {
   background-color: #15181C;
   /* height: 100%; */

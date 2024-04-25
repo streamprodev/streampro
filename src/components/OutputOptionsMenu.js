@@ -10,9 +10,10 @@ import { useLocation } from 'react-router-dom';
 
 const { ipcRenderer } = window.require('electron');
 
-const OutputOptionsMenu = ({ posX, posY, setshowoutputOptions, setoutputConnectionEstablished, setisLive, setreconnectingStatus, showoutputOptions, outputOptionsRef, iconRef, setIsConnectNowModalOpen, isCurrentNowEdit, setisCurrentNowEdit, activeCarousel, setselectedSlide }) => {
+const OutputOptionsMenu = ({ posX, posY, setshowoutputOptions, setoutputConnectionEstablished, setisLive, setreconnectingStatus, showoutputOptions, outputOptionsRef, iconRef, setIsConnectNowModalOpen, isCurrentNowEdit, setisCurrentNowEdit, activeCarousel, carouselRef }) => {
 
-    const { currentEditUuid, setcurrentEditUuid, bibleConnections, setbibleConnections, outputPathname, setactiveCarousel } = usePreviewXOutput();
+    const { currentEditUuid, setcurrentEditUuid, bibleConnections, setbibleConnections, outputPathname, setactiveCarousel,
+        setselectedSlide, selectedSlide } = usePreviewXOutput();
     // const { anchorPoint, show } = useContextMennu(type);
 
     const location = useLocation();
@@ -61,6 +62,7 @@ const OutputOptionsMenu = ({ posX, posY, setshowoutputOptions, setoutputConnecti
                     setisCurrentNowEdit(true)
                     setIsConnectNowModalOpen(true)
                     ipcRenderer.send('getavalaibleVmixInputsInitiate', activeCarousel[outputPathname]);
+                    ipcRenderer.send('sendtoalloutputs', bibleConnections);
 
 
                 }}>
@@ -77,11 +79,25 @@ const OutputOptionsMenu = ({ posX, posY, setshowoutputOptions, setoutputConnecti
                     <span style={{ fontSize: '12px', fontWeight: "500" }}>Add New Output</span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "12px", cursor: "pointer" }} onClick={() => {
+
+
                     const currentLocationConnections = bibleConnections.filter(x => x.key)
                     const removeKey = (activeCarousel[outputPathname]).uuid
+
+                    // if (bibleConnections.findIndex(obj => obj.uuid === removeKey) == 0) {
+                    //     setselectedSlide(selectedSlide + 1)
+
+                    // } else {
+                    //     setselectedSlide(selectedSlide - 1)
+                    // }
+
                     console.log(bibleConnections.filter(x => x.uuid != removeKey))
                     // console.log(removeKey, bibleConnections)
                     setbibleConnections(prev => prev.filter(x => x.uuid != removeKey))
+                    if (carouselRef.current) {
+                        console.log(carouselRef.current)
+                        carouselRef.current.goToSlide(0)
+                    }
                     setshowoutputOptions(false)
 
                     if (currentLocationConnections.length == 1) {
@@ -101,15 +117,17 @@ const OutputOptionsMenu = ({ posX, posY, setshowoutputOptions, setoutputConnecti
                             theme: "light",
                             style: { width: "500px", height: "20px", backgroundColor: "#A7FFB5", textAlign: "left" }
                         });
+                        // setselectedSlide(selectedSlide + 1)
 
                     } else {
-                        setselectedSlide(prev => prev + 1)
+                        // setselectedSlide(selectedSlide + 1)
 
                         // setactiveCarousel(prev => {
                         //     console.log(bibleConnections.find(x => x.key._attributes.key == removeKey))
                         //     return { ...prev, [outputPathname]: bibleConnections.find(x => x.key._attributes.key != removeKey) }
                         // })
                     }
+
 
                 }}>
                     <FiWifiOff size={14} color={"#FF0E48"} />

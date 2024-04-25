@@ -4,13 +4,13 @@
 @exit
 
 :AMD64
-@echo off
+@REM @echo off
 
 rem Check if the driver is installed
 pnputil /enum-drivers | find /i "usbmmidd" 
 
 rem If the driver is not installed, then install it
-if %errorlevel% neq 0 (
+if %errorlevel% equ 0 (
     @cmd /c deviceinstaller64.exe enableidd 1
     echo Driver already installed
 ) else (
@@ -20,13 +20,13 @@ if %errorlevel% neq 0 (
 @goto end
 
 :x86
-@echo off
+@REM @echo off
 
 rem Check if the driver is installed
 pnputil /enum-drivers | find /i "usbmmidd" 
 
 rem If the driver is not installed, then install it
-if %errorlevel% neq 0 (
+if %errorlevel% equ 0 (
     @cmd /c deviceinstaller.exe enableidd 1
     echo Driver already installed
 ) else (
@@ -35,4 +35,3 @@ if %errorlevel% neq 0 (
 )
 
 :end
-@pause

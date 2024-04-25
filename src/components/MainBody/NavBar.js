@@ -1,5 +1,5 @@
 
-import { useEffect, useMemo, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import SideBar from '../SideBar';
 import CreateSongModal from '../CreateSongModal';
 import { Copy, Edit2, ProfileCircle, SearchNormal, Setting2, ArrowDown2, ArrowUp2 } from 'iconsax-react';
@@ -24,6 +24,7 @@ import { useRegistrationInfo } from '../../context/RegistrationInfoContext';
 import AccountMenu from '../AccountMenu';
 import exportFromJSON from 'export-from-json'
 import { saveAs } from 'file-saver';
+import isOnline from 'is-online';
 const { ipcRenderer } = window.require('electron');
 
 
@@ -32,19 +33,23 @@ function NavBar() {
     const { openImportModal, songData, setsongData, setmenuEditId } = useSong()
     const { registrationInfo, AccountMenuRef, showAccountMenuPosition, setshowAccountMenuPosition, showAccountMenu, setshowAccountMenu, getRandomColor } = useRegistrationInfo()
 
+    const [isAppOnline, setIsAppOnline] = useState(true);
+    const toastId = React.useRef(null);
+    let interval;
+
     useEffect(() => {
         ipcRenderer.send('syncSongs', { registrationInfo, songData })
         // ipcRenderer.on('resetSongData', resetSongData);
-
-        return () => {
-            // ipcRenderer.removeListener('resetSongData', resetSongData);
-        }
+        interval = setInterval(InternetErrMessagenger, 5000); // call the function name only not with function with call `()`
+        // return () => {
+        //     clearInterval(interval) // for component unmount stop the interval
+        // }
     }, []);
 
-    const exportSongs=()=>{
+    const exportSongs = () => {
         const zip = require('jszip')();
         // console.log(songData)
-        songData.forEach((songg)=>{
+        songData.forEach((songg) => {
             // const file = `data:text/;chatset=utf-8,${encodeURIComponent(
             //     JSON.stringify(songg.body)
             // )}`
@@ -146,6 +151,49 @@ function NavBar() {
     }
 
 
+    const InternetErrMessagenger = async () => { setIsAppOnline(await isOnline()); console.log(await isOnline()) };
+
+    useEffect(() => {
+
+
+        if (isAppOnline) {
+            if (toast.isActive(toastId.current)) {
+                toast.update('onlineToast', {
+                    render: <LowerToast status={'success'} message={'Internet connected.'} />,
+                    position: "top-center",
+                    autoClose: 1000,
+                    hideProgressBar: true,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "light",
+                    style: { width: "200px", backgroundColor: "#A7FFB5", textAlign: "left", margin: "auto", color: "#ffffff", marginTop: "20px", marginRight: "0px", height: "30px", minHeight: "20px", fontSize: "11px" },
+                    bodyStyle: { margin: "0", padding: "0", fontSize: "11px" }
+                });
+            }
+
+        } else {
+            if (!toast.isActive(toastId.current)) {
+                toastId.current = toast(<LowerToast status={'sync'} message={'Internet disconnected.....'} />, {
+                    position: "top-center",
+                    toastId: "onlineToast",
+                    autoClose: false,
+                    hideProgressBar: true,
+                    // closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "light",
+                    style: { width: "200px", backgroundColor: "#FF3939", textAlign: "left", margin: "auto", color: "#ffffff", marginTop: "20px", marginRight: "0px", height: "30px", minHeight: "20px", fontSize: "11px" },
+                    bodyStyle: { margin: "0", padding: "0", fontSize: "11px" }
+
+                });
+            }
+        }
+    }, [isAppOnline])
+
+
     return (
         <div className='NavBar'>
             <div className='' style={{ width: "333px", display: "flex", position: "relative" }}>
@@ -153,10 +201,10 @@ function NavBar() {
                 <SearchNormal style={{ position: "absolute", top: "20%", right: "4%" }} size={20} />
             </div>
             <div style={{ display: "flex", alignItems: 'center', gap: "55px" }}>
-                <div style={{display:"flex",flexDirection:"row",gap:"10px"}}>
-                <p style={{ fontWeight: "600", fontSize: "12px", background: "#15181C", textAlign: "center", cursor: "pointer" }} className='ImportSong' onClick={openImportModal}>Import Songs</p>
-                    <p style={{ fontWeight: "600", fontSize: "12px", background: "#15181C", textAlign: "center", cursor: "pointer", color:"#FF3939" }} className='ImportSong' onClick={exportSongs}>|</p>
-                    <p style={{ fontWeight: "600", fontSize: "12px", background: "#15181C", textAlign: "center", cursor: "pointer",  }} className='ImportSong' onClick={exportSongs}>Export Songs</p>
+                <div style={{ display: "flex", flexDirection: "row", gap: "10px" }}>
+                    <p style={{ fontWeight: "600", fontSize: "12px", background: "#15181C", textAlign: "center", cursor: "pointer" }} className='ImportSong' onClick={openImportModal}>Import Songs</p>
+                    <p style={{ fontWeight: "600", fontSize: "12px", background: "#15181C", textAlign: "center", cursor: "pointer", color: "#FF3939" }} className='ImportSong' onClick={exportSongs}>|</p>
+                    <p style={{ fontWeight: "600", fontSize: "12px", background: "#15181C", textAlign: "center", cursor: "pointer", }} className='ImportSong' onClick={exportSongs}>Export Songs</p>
 
                 </div>
                 <div style={{ display: "flex", alignItems: 'center', gap: 21, marginRight: "15px" }}>

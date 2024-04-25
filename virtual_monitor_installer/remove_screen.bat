@@ -10,7 +10,7 @@ rem Check if the driver is installed
 pnputil /enum-drivers | find "usbmmidd"
 
 rem If the driver is not installed, then install it
-if %errorlevel% neq 0 (
+if %errorlevel% equ 0 (
     echo Driver already installed
     @cmd /c deviceinstaller64.exe enableidd 0
 ) 
@@ -23,7 +23,7 @@ rem Check if the driver is installed
 pnputil /enum-drivers | find "usbmmidd"
 
 rem If the driver is not installed, then install it
-if %errorlevel% neq 0 (
+if %errorlevel% equ 0 (
     echo Driver already installed
     @cmd /c deviceinstaller.exe enableidd 0
 )
