@@ -57,6 +57,7 @@ var server = '';
 var reconnecting = '';
 var generatereconnecting = '';
 var intervalId = '';
+var getScreensIntervalId = '';
 var intervalIdGenerate = '';
 var password = '';
 var auth_token = '2S8k5VeomU47NgyTXJHoJfuHW5i_4J7x3iWftMy77LUzoDMtd'; //eniolorund
@@ -66,6 +67,8 @@ var bearer_token = '2S8k9KqD12kvPVeT5CxUacNymrv_7TXuGa24NwpgxuiyAmLd6';//api key
 // var auth_token = '1bXHu9TS8UqouHW9z35ttCKL8VC_6saRQWiViaJDisjavzT5Q';
 // var bearer_token = '2RxyddNquVUsbclmKkrN9POK9j1_Joh8LMatgfKscCoQNmnq';//api key
 var session_id;
+var initial_displays;
+var all_displays;
 var update_found;
 var isEwGrabberActive = false
 var active_display = ''
@@ -1980,6 +1983,17 @@ ipcMain.on('updateRegistrationInfo', async (event, registration_info) => {
 ipcMain.on("activateEwGrabber", async function (event, arg) {
 
     isEwGrabberActive = true;
+    screenshot.listDisplays().then((displays) => {
+        event.sender.send("grabber-finished-screen", displays);
+        active_display = displays[displays.length - 1].name;
+        initial_displays = displays;
+        all_displays = displays;
+    }).catch((err) => {
+    });
+    getScreenCount();
+
+    console.log("gotten displays start".concat(new Date().toLocaleTimeString()).concat(new Date().getMilliseconds()))
+
 
     // const initial_display_count = await getScreenCount();
     var pat = path.join(app.getPath('documents'), 'StreamPro/virtual_monitor_installer/usbmmidd.bat')
@@ -2019,16 +2033,16 @@ ipcMain.on("activateEwGrabber", async function (event, arg) {
     // while (await getScreenCount() <= initial_display_count) {
     // }
 
-    screenshot.listDisplays().then((displays) => {
-        event.sender.send("grabber-finished-test", displays);
-        console.log(displays);
-        console.log("about to show displays")
-        console.log(new Date().toLocaleTimeString());
-        active_display = displays[displays.length - 1].name;
+    // screenshot.listDisplays().then((displays) => {
+    //     event.sender.send("grabber-finished-test", displays);
+    //     console.log(displays);
+    //     console.log("about to show displays")
+    //     console.log(new Date().toLocaleTimeString());
+    //     active_display = displays[displays.length - 1].name;
 
-    }).catch(error => {
-        event.sender.send("grabber-finished-test", error);
-    });
+    // }).catch(error => {
+    //     event.sender.send("grabber-finished-test", error);
+    // });
     event.sender.send("grabber-finished-test", 'path done');
     event.sender.send("grabber-finished-test", 'screenshot done');
 
@@ -2042,8 +2056,16 @@ ipcMain.on("activateEwGrabber", async function (event, arg) {
 });
 
 async function getScreenCount() {
-    const displays = await screenshot.listDisplays();
-    return displays.length;
+    console.log('******************************************************************')
+    getScreensIntervalId = setInterval(async () => {
+        screenshot.listDisplays().then((displays) => {
+            console.log("gotten displays interval*****************************************************************".concat(new Date().toLocaleTimeString()).concat(new Date().getMilliseconds()))
+            all_displays = displays
+
+        }).catch((err) => {
+            // event.sender.send("grabber-finished-test", err);
+        });
+    }, 5000);
 }
 
 ipcMain.on("deactivateEwGrabber", function (event, arg) {
@@ -2428,35 +2450,53 @@ function getEasyWorshipOutput(event, active_display) {
     }
 
     event.sender.send("grabber-finished-test", 'path doing');
+    console.log("about to get displays- ----------------------------------------------------------------------------------")
 
-    screenshot.listDisplays().then((displays) => {
+    // screenshot.listDisplays().then((displays) => {
+    //     console.log("gotten displays ".concat(new Date().toLocaleTimeString()).concat(new Date().getMilliseconds()))
 
-        event.sender.send("grabber-finished-screen", displays);
-        // console.log(displays);
-        active_display = displays[displays.length - 1].name;
+    //     event.sender.send("grabber-finished-screen", displays);
+    //     // console.log(displays);
+    //     active_display = displays[displays.length - 1].name;
 
-        console.log(new Date(), 'get active display');
-        // console.log(active_display);
+    //     console.log(new Date(), 'get active display');
+    //     // console.log(active_display);
 
-    }).catch((err) => {
-        event.sender.send("grabber-finished-test", err);
-    });
+    // }).catch((err) => {
+    //     event.sender.send("grabber-finished-test", err);
+    // });
+
+    console.log(all_displays, 'all_displays')
+    console.log(initial_displays, 'initial_displays')
+    if (all_displays && initial_displays) {
+        if (all_displays.length > initial_displays.length) {
+            active_display = all_displays[all_displays.length - 1].name;
+            event.sender.send("grabber-finished-screen", all_displays);
+        }
+
+    }
 
 
+    console.log("about to do screenshot -".concat(new Date().toLocaleTimeString()).concat(new Date().getMilliseconds()))
     screenshot({ screen: active_display }).then((img) => {
         (async () => {
 
 
+            console.log("done screenshots - ".concat(new Date().toLocaleTimeString()).concat(new Date().getMilliseconds()))
 
             // console.log(img);
             event.sender.send("grabber-finished-image", _arrayBufferToBase64(img));
+            console.log("sent image to front/about to compress image for recognition - ".concat(new Date().toLocaleTimeString()).concat(new Date().getMilliseconds()))
             // event.sender.send("grabber-finished-image", img);
             const compressedImage = await sharp(img).webp({ quality: 1 }).resize({ width: 300 }).toBuffer();
+            console.log("compressed image/about to send for recognition - ".concat(new Date().toLocaleTimeString()).concat(new Date().getMilliseconds()))
             const worker = global.shared.worker;
             const { data: { text } } = await worker.recognize(compressedImage);
             console.log(new Date(), 'decoded');
             // console.log(text);
+            console.log("text recognized/about to send to front - ".concat(new Date().toLocaleTimeString()).concat(new Date().getMilliseconds()))
             event.sender.send("grabber-finished", text);
+            console.log(text, "text rsent - ".concat(new Date().toLocaleTimeString()).concat(new Date().getMilliseconds()))
             // setImmediate(function A() {
             // });
             getEasyWorshipOutput(event, active_display);
