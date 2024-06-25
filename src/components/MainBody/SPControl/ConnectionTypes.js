@@ -135,13 +135,13 @@ function ConnectionTypes() {
 
                                     </div>
                                 </div> :
-                                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }} onClick={() => setIsVmixExternalConnectionEnabled(prev => !prev)}>
+                                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, cursor: 'pointer' }} onClick={() => setIsVmixExternalConnectionEnabled(prev => !prev)}>
                                     {
                                         // isVmixExternalConnectionEnabled ?
                                         //     <MinusSquare size="14" color="#B1B1B1" onClick={() => setIsVmixExternalConnectionEnabled(false)} /> :
                                         //     <BiSquareRounded size="14" color="#B1B1B1" onClick={() => setIsVmixExternalConnectionEnabled(true)} />
                                     }
-                                    <input type='checkbox' value={isVmixExternalConnectionEnabled} checked={isVmixExternalConnectionEnabled} />
+                                    <input type='checkbox' value={isVmixExternalConnectionEnabled} checked={isVmixExternalConnectionEnabled} style={{ cursor: 'pointer' }} />
                                     <span style={{ fontWeight: "600", color: "#FFFFFF", fontSize: "14px", }}>Permit external control</span>
                                 </div>
                         }
@@ -204,7 +204,7 @@ function ConnectionTypes() {
                         <div style={{ position: 'relative' }}>
                             <img src={xsplit} alt="logo" height={70} width={"100%"} />
                             <div style={{ position: 'absolute', top: 0, right: 0 }}>
-                                <FiEdit size={10} />
+                                {/* <FiEdit size={10} /> */}
                             </div>
                         </div>
                         <span style={{ fontWeight: "600", color: "#FFFFFF", fontSize: "14px", }}>Xsplit</span>
@@ -259,7 +259,7 @@ function ConnectionTypes() {
                         <div style={{ position: 'relative' }}>
                             <img src={obs} alt="logo" height={80} width={"100%"} />
                             <div style={{ position: 'absolute', top: 0, right: 0 }}>
-                                <FiEdit size={10} />
+                                {/* <FiEdit size={10} /> */}
                             </div>
                         </div>
                         <span style={{ fontWeight: "600", color: "#FFFFFF", fontSize: "14px", }}>OBS</span>
@@ -312,7 +312,7 @@ function ConnectionTypes() {
                         <div style={{ position: 'relative' }}>
                             <img src={lightstream} alt="logo" height={90} width={"100%"} />
                             <div style={{ position: 'absolute', top: 0, right: 0 }}>
-                                <FiEdit size={10} />
+                                {/* <FiEdit size={10} /> */}
                             </div>
                         </div>
                         <span style={{ fontWeight: "600", color: "#FFFFFF", fontSize: "14px", }}>Lightstream</span>

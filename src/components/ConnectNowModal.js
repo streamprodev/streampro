@@ -44,12 +44,17 @@ const ConnectNowModal = ({ isEdit = false }) => {
 
 
     useEffect(() => {
+        console.log('newConnectionEstablished', newConnectionEstablished)
+    }, [])
+    useEffect(() => {
         if (isCurrentNowEdit) {
             setPage(5)
             console.log(currentEditUuid)
             // setavalaibleInputs()
         }
     }, [isCurrentNowEdit])
+
+    const [newConnectionEstablished, setNewConnectionEstablished] = useState(false)
 
     const seletInputNumber = (key) => {
         //seleck key
@@ -102,6 +107,7 @@ const ConnectNowModal = ({ isEdit = false }) => {
             }
         }
 
+        setNewConnectionEstablished(false)
         setTimeout(() => {
             setoutputConnectionEstablished(1)
             // setoutputConnectionSoftware('')
@@ -156,6 +162,7 @@ const ConnectNowModal = ({ isEdit = false }) => {
         closeConnectNowModal()
         setPage(1)
         setisCurrentNowEdit(false)
+        setNewConnectionEstablished(false)
         // setoutputConnectionSoftware('')
         // setconnectionMode('')
     }
@@ -328,8 +335,9 @@ const ConnectNowModal = ({ isEdit = false }) => {
                     }
                     ipcRenderer.send('getavalaibleVmixInputsInitiate', currentEditConnection);
                     setConnectionEstablished(true)
+                    setNewConnectionEstablished(true)
+                    setPage(5)
                     setTimeout(() => {
-                        setPage(5)
 
                     }, 1000)
 
@@ -398,7 +406,7 @@ const ConnectNowModal = ({ isEdit = false }) => {
                         }
 
                         {
-                            page === 4 && <EstablishingConnection onClick={updateConnectionMode} outputConnectionEstablished={outputConnectionEstablished} connectionEstablished={connectionEstablished} />
+                            page === 4 && <EstablishingConnection onClick={updateConnectionMode} outputConnectionEstablished={outputConnectionEstablished} connectionEstablished={newConnectionEstablished} />
                         }
                         {
                             page === 5 && <SelectVmixInput setselectedVmixInputKey={setselectedVmixInputKey} onClick={seletInputNumber} avalaibleInputs={avalaibleInputs} selectedVmixInputKey={selectedVmixInputKey} />

@@ -23,19 +23,19 @@ function ControlSummary() {
                 <div style={{ paddingTop: '50px' }}>
                     <p style={{ fontWeight: "400", color: "#B1B1B1", fontSize: "14px", }}>SP Control super charges your live production software.Providing more ways of controlling your live production.</p>
                 </div>
-                <hr style={{ width: "50%", color: '#B1B1B1', height: '1px' }} />
-                <div style={{ padding: "32px 10px" }}>
+                <hr style={{ width: "50%", backgroundColor: '#B1B1B1', height: '1px', border: 'none' }} />
+                <div style={{ padding: "10px 10px" }}>
                     <p style={{ fontWeight: "400", color: "#B1B1B1", fontSize: "14px", fontStyle: 'normal' }}>Click the enable button on any of the supported applications to confirm and establish communication.</p>
                 </div>
-                <hr style={{ width: "50%", color: '#B1B1B1', height: '1px' }} />
-                <div style={{ padding: "32px 10px" }}>
+                <hr style={{ width: "50%", backgroundColor: '#B1B1B1', height: '1px', border: 'none' }} />
+                <div style={{ padding: "10px 10px" }}>
                     <p style={{ fontWeight: "400", color: "#B1B1B1", fontSize: "14px", fontStyle: 'normal' }}> Upon successful connection, a control key is generated.  </p>
                 </div>
-                <hr style={{ width: "50%", color: '#B1B1B1', height: '1px' }} />
+                <hr style={{ width: "50%", backgroundColor: '#B1B1B1', height: '1px', border: 'none' }} />
                 {/* <div style={{ paddingTop: '43px' }}>
 
                 </div> */}
-                <div style={{ padding: "32px 10px" }}>
+                <div style={{ padding: "10px 10px" }}>
                     <p style={{ fontWeight: "400", color: "#B1B1B1", fontSize: "14px", fontStyle: 'normal' }}>This will key will be needed for control of your live production</p>
                 </div>
             </div>
